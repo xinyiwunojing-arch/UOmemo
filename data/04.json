@@ -3,6 +3,7 @@
   "stages": ["b01", "b02", "b09", "b06", "b14", "b07", "b03", "b08", "b10", "b11", "b15", "b12", "b04", "b13", "b05"],
   "maps": ["mb1", "mb2", "mb3", "mb4", "mb5", "mb6"],
   "tablets": ["tb0", "tb1", "tb2", "tb3", "tb4"],
+  "graves": ["gb1", "gb2", "gb3", "gb4", "gb5"],
   "memo": [],
   "units": [],
   "formations": []

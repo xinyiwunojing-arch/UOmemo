@@ -45,6 +45,7 @@ th { background:var(--head); white-space:nowrap; }
     <h2>巡礼地</h2>
     <div id="maps-sec" hidden><h3>宝の地図</h3><div id="maps"></div></div>
     <div id="tablets-sec" hidden><h3>石板</h3><div id="tablets"></div></div>
+    <div id="graves-sec" hidden><h3>墓所</h3><div id="graves"></div></div>
   </section>
   <h2>ユニット評価</h2>
   <div id="units"></div>
@@ -94,23 +95,25 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
   document.getElementById("units").innerHTML = render(d.units);
   document.getElementById("formations").innerHTML = render(d.formations);
-  // 巡礼地: 宝の地図(maps.json)と石板(tablets.json)を、章データに並べた id で引いて表示する
+  // 巡礼地: 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)を、章データに並べた id で引いて表示する
   // 指定がない種類は小見出しごと、どちらもない章は「巡礼地」ごと出さない
   const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
     const byKey = Object.fromEntries(list.map(x => [x.id, x]));
     let rows = d[key].map(id => byKey[id] || { id, 状態: `${file}.json に未登録` });
-    // 石板の報酬はクエスト全体の報酬なので、表の列にせず表の下に独立して書く
-    let reward = "";
-    if (key === "tablets") {
+    // 石板・墓所の報酬はクエスト全体の報酬なので、表の列にせず表の下に独立して書く
+    let after = "";
+    const notes = { tablets: "※ヤーナの加入が必要", graves: "※シャロンの加入が必要" };
+    if (key in notes) {
       const all = rows.flatMap(r => r.報酬 || []);
       rows = rows.map(({ 報酬, ...r }) => r);
-      if (all.length) reward = `<p>クリア報酬：${esc(all.join("、"))}</p>`;
+      if (all.length) after += `<p>クリア報酬：${esc(all.join("、"))}</p>`;
+      after += `<p>${esc(notes[key])}</p>`;
     }
-    document.getElementById(key).innerHTML = render(rows) + reward;
+    document.getElementById(key).innerHTML = render(rows) + after;
     document.getElementById(`${key}-sec`).hidden = false;
     document.getElementById("pilgrim-sec").hidden = false;
   }) : null;
-  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets")]);
+  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves")]);
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
   document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);
