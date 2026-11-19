@@ -1,6 +1,6 @@
 {
   "title": "終章",
-  "stages": [],
+  "stages": ["f01", "f02", "f04", "f08", "f03", "f05", "f06", "f07"],
   "memo": [],
   "units": [],
   "formations": []
