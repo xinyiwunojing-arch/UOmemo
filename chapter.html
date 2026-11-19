@@ -40,6 +40,10 @@ th { background:var(--head); white-space:nowrap; }
   <h2>攻略メモ</h2>
   <div id="stages"></div>
   <div id="memo"></div>
+  <section id="maps-sec" hidden>
+    <h2>宝の地図</h2>
+    <div id="maps"></div>
+  </section>
   <h2>ユニット評価</h2>
   <div id="units"></div>
   <h2>使用編成</h2>
@@ -77,6 +81,12 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
   document.getElementById("units").innerHTML = render(d.units);
   document.getElementById("formations").innerHTML = render(d.formations);
+  // 宝の地図: 章データの maps に並べた id を maps.json から引いて表示する（指定がない章は見出しごと出さない）
+  if (d.maps && d.maps.length) return load("maps").then(maps => {
+    const mapById = Object.fromEntries(maps.map(m => [m.id, m]));
+    document.getElementById("maps").innerHTML = render(d.maps.map(id => mapById[id] || { id, 状態: "maps.json に未登録" }));
+    document.getElementById("maps-sec").hidden = false;
+  });
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
   document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);
