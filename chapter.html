@@ -98,7 +98,15 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   // 指定がない種類は小見出しごと、どちらもない章は「巡礼地」ごと出さない
   const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
     const byKey = Object.fromEntries(list.map(x => [x.id, x]));
-    document.getElementById(key).innerHTML = render(d[key].map(id => byKey[id] || { id, 状態: `${file}.json に未登録` }));
+    let rows = d[key].map(id => byKey[id] || { id, 状態: `${file}.json に未登録` });
+    // 石板の報酬はクエスト全体の報酬なので、表の列にせず表の下に独立して書く
+    let reward = "";
+    if (key === "tablets") {
+      const all = rows.flatMap(r => r.報酬 || []);
+      rows = rows.map(({ 報酬, ...r }) => r);
+      if (all.length) reward = `<p>クリア報酬：${esc(all.join("、"))}</p>`;
+    }
+    document.getElementById(key).innerHTML = render(rows) + reward;
     document.getElementById(`${key}-sec`).hidden = false;
     document.getElementById("pilgrim-sec").hidden = false;
   }) : null;
