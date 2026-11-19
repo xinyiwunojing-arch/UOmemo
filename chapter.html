@@ -77,7 +77,9 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   document.getElementById("title").textContent = d.title;
   // 攻略順: 章データの stages に並べた id を、stages.json から引いて表示する
   const byId = Object.fromEntries(stages.map(s => [s.id, s]));
-  document.getElementById("stages").innerHTML = render((d.stages || []).map(id => byId[id] || { id, 状態: "stages.json に未登録" }));
+  // 敵Lv は名前の後ろに「(Lv.N)」として付け、列としては出さない
+  const withLv = s => { const { 敵Lv, ...r } = s; if (敵Lv != null) r.名前 = `${s.名前}(Lv.${敵Lv})`; return r; };
+  document.getElementById("stages").innerHTML = render((d.stages || []).map(id => byId[id] ? withLv(byId[id]) : { id, 状態: "stages.json に未登録" }));
   document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
   document.getElementById("units").innerHTML = render(d.units);
   document.getElementById("formations").innerHTML = render(d.formations);
