@@ -15,6 +15,7 @@ main { max-width:960px; margin:0 auto; }
 a { color:var(--link); }
 h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
 h2 { font-size:1.15rem; border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-top:2rem; }
+h3 { font-size:1rem; margin:1.2rem 0 .5rem; }
 .wrap { overflow-x:auto; }
 table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
@@ -40,9 +41,10 @@ th { background:var(--head); white-space:nowrap; }
   <h2>攻略メモ</h2>
   <div id="stages"></div>
   <div id="memo"></div>
-  <section id="maps-sec" hidden>
-    <h2>宝の地図</h2>
-    <div id="maps"></div>
+  <section id="pilgrim-sec" hidden>
+    <h2>巡礼地</h2>
+    <div id="maps-sec" hidden><h3>宝の地図</h3><div id="maps"></div></div>
+    <div id="tablets-sec" hidden><h3>石板</h3><div id="tablets"></div></div>
   </section>
   <h2>ユニット評価</h2>
   <div id="units"></div>
@@ -92,12 +94,15 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
   document.getElementById("units").innerHTML = render(d.units);
   document.getElementById("formations").innerHTML = render(d.formations);
-  // 宝の地図: 章データの maps に並べた id を maps.json から引いて表示する（指定がない章は見出しごと出さない）
-  if (d.maps && d.maps.length) return load("maps").then(maps => {
-    const mapById = Object.fromEntries(maps.map(m => [m.id, m]));
-    document.getElementById("maps").innerHTML = render(d.maps.map(id => mapById[id] || { id, 状態: "maps.json に未登録" }));
-    document.getElementById("maps-sec").hidden = false;
-  });
+  // 巡礼地: 宝の地図(maps.json)と石板(tablets.json)を、章データに並べた id で引いて表示する
+  // 指定がない種類は小見出しごと、どちらもない章は「巡礼地」ごと出さない
+  const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
+    const byKey = Object.fromEntries(list.map(x => [x.id, x]));
+    document.getElementById(key).innerHTML = render(d[key].map(id => byKey[id] || { id, 状態: `${file}.json に未登録` }));
+    document.getElementById(`${key}-sec`).hidden = false;
+    document.getElementById("pilgrim-sec").hidden = false;
+  }) : null;
+  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets")]);
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
   document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);
