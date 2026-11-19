@@ -60,7 +60,18 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   document.getElementById("title").textContent = d.title;
   // 攻略順: 章データの stages に並べた id を、stages.json から引いて表示する
   const byId = Object.fromEntries(stages.map(s => [s.id, s]));
-  document.getElementById("stages").innerHTML = render((d.stages || []).map(id => byId[id] || { id, 状態: "stages.json に未登録" }));
+  // 「参照」がある行は、空の項目を参照先の値で埋め、名前の横に参照先の名前を添える
+  const isEmpty = v => v == null || v === "" || (Array.isArray(v) && v.length === 0);
+  const resolve = s => {
+    const ref = s.参照 && byId[s.参照];
+    if (!ref) return s;
+    const r = { id: s.id };  // 列の並びは参照先に合わせる
+    for (const k in ref) if (k !== "id") r[k] = isEmpty(s[k]) ? ref[k] : s[k];
+    for (const k in s) if (!(k in r) && k !== "参照") r[k] = s[k];
+    r.名前 = `${s.名前}（${ref.名前}）`;
+    return r;
+  };
+  document.getElementById("stages").innerHTML = render((d.stages || []).map(id => byId[id] ? resolve(byId[id]) : { id, 状態: "stages.json に未登録" }));
   document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
   document.getElementById("units").innerHTML = render(d.units);
   document.getElementById("formations").innerHTML = render(d.formations);
