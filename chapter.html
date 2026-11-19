@@ -17,7 +17,7 @@ h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
 h2 { font-size:1.15rem; border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-top:2rem; }
 .wrap { overflow-x:auto; }
 table { border-collapse:collapse; width:100%; font-size:.95rem; }
-th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; }
+th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; }
 .empty, .err { color:var(--sub); }
 /* スマホ幅では表を1件ずつのカード表示にする（項目名は各値の前に出す） */
@@ -78,7 +78,16 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   // 攻略順: 章データの stages に並べた id を、stages.json から引いて表示する
   const byId = Object.fromEntries(stages.map(s => [s.id, s]));
   // 敵Lv は名前の後ろに「(Lv.N)」として付け、列としては出さない
-  const withLv = s => { const { 敵Lv, ...r } = s; if (敵Lv != null) r.名前 = `${s.名前}(Lv.${敵Lv})`; return r; };
+  // 加入キャラは「加入：○○」として解放要素の先頭にまとめ、列としては出さない
+  const withLv = s => {
+    const { 敵Lv, 加入キャラ, ...r } = s;
+    if (敵Lv != null) r.名前 = `${s.名前}(Lv.${敵Lv})`;
+    const parts = [];
+    if (加入キャラ && 加入キャラ.length) parts.push(`加入：${加入キャラ.join("、")}`);
+    if (s.解放要素 && s.解放要素.length) parts.push(...s.解放要素);
+    r.解放要素 = parts.join("\n");  // 項目ごとに改行して表示する
+    return r;
+  };
   document.getElementById("stages").innerHTML = render((d.stages || []).map(id => byId[id] ? withLv(byId[id]) : { id, 状態: "stages.json に未登録" }));
   document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
   document.getElementById("units").innerHTML = render(d.units);
