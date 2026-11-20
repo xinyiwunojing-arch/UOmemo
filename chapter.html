@@ -39,9 +39,6 @@ th { background:var(--head); white-space:nowrap; }
 <main>
   <nav><a href="index.html">← 目次</a></nav>
   <h1 id="title">読み込み中…</h1>
-  <h2>攻略メモ</h2>
-  <div id="stages"></div>
-  <div id="memo"></div>
   <section id="pilgrim-sec" hidden>
     <h2>巡礼地</h2>
     <details id="maps-sec" hidden><summary>宝の地図</summary><div id="maps"></div></details>
@@ -79,24 +76,9 @@ function render(v) {
 
 const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
-Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
+load(ch).then(d => {
   document.title = `${d.title} | 攻略メモ`;
   document.getElementById("title").textContent = d.title;
-  // 攻略順: 章データの stages に並べた id を、stages.json から引いて表示する
-  const byId = Object.fromEntries(stages.map(s => [s.id, s]));
-  // 敵Lv は名前の後ろに「(Lv.N)」として付け、列としては出さない
-  // 加入キャラは「加入：○○」として解放要素の先頭にまとめ、列としては出さない
-  const withLv = s => {
-    const { 敵Lv, 加入キャラ, ...r } = s;
-    if (敵Lv != null) r.名前 = `${s.名前}(Lv.${敵Lv})`;
-    const parts = [];
-    if (加入キャラ && 加入キャラ.length) parts.push(`加入：${加入キャラ.join("、")}`);
-    if (s.解放要素 && s.解放要素.length) parts.push(...s.解放要素);
-    r.解放要素 = parts.join("\n");  // 項目ごとに改行して表示する
-    return r;
-  };
-  document.getElementById("stages").innerHTML = render((d.stages || []).map(id => byId[id] ? withLv(byId[id]) : { id, 状態: "stages.json に未登録" }));
-  document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
   // クラス評価: classes.json のうち、この章までに解放されたクラスを全部並べる（解放された章の順。新しいものが下）
   // ランク・コメントは章ごとに別。章データの classes に {id, ランク, コメント} を書いた分だけ埋まる
   const showClasses = load("classes").then(list => {

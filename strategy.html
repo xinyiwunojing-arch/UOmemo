@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>攻略メモ（攻略順）</title>
+<style>
+:root { --bg:#fff; --fg:#222; --sub:#666; --line:#ddd; --head:#f3f3f3; --link:#0b63c4; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#161616; --fg:#e8e8e8; --sub:#aaa; --line:#3a3a3a; --head:#242424; --link:#6fb0ff; }
+}
+body { margin:0; padding:16px; background:var(--bg); color:var(--fg);
+       font-family:system-ui, sans-serif; line-height:1.6; }
+main { max-width:960px; margin:0 auto; }
+a { color:var(--link); }
+h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
+h2 { font-size:1.15rem; border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-top:2rem; }
+summary { font-size:1rem; font-weight:bold; margin:1.2rem 0 .5rem; cursor:pointer; }
+.wrap { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:.95rem; }
+th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
+th { background:var(--head); white-space:nowrap; }
+.empty, .err { color:var(--sub); }
+/* スマホ幅では表を1件ずつのカード表示にする（項目名は各値の前に出す） */
+@media (max-width: 600px) {
+  table, tbody, tr, td { display:block; width:auto; }
+  thead { display:none; }
+  tr { border:1px solid var(--line); border-radius:6px; padding:.4rem .6rem; margin-bottom:.6rem; }
+  td { display:inline-block; border:none; padding:.1rem 1rem .1rem 0; }
+  td::before { content:attr(data-label) "："; color:var(--sub); font-size:.85rem; }
+  td.name { display:block; font-weight:bold; }
+  td.name::before { content:none; }
+  td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
+  td.blank { display:none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <nav><a href="index.html">← 目次</a></nav>
+  <h1>攻略メモ（攻略順）</h1>
+  <div id="stages">読み込み中…</div>
+  <div id="memo"></div>
+</main>
+<script>
+// data/route.json の stages に並べた順で、全エリアのステージを表示する
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
+//   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
+function render(v) {
+  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
+  if (typeof v !== "object") return `<p>${esc(v)}</p>`;
+  if (!Array.isArray(v)) v = [v];
+  if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  const keys = [...new Set(v.flatMap(Object.keys))].filter(k => k !== "id");  // id は表示しない
+  const cell = x => x == null ? "" : esc(Array.isArray(x) ? x.join("、") : x);
+  return `<div class="wrap"><table><thead><tr>${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
+    <tbody>${v.map(r => `<tr>${keys.map(k => { const c = cell(r[k]);
+      const cls = c === "" ? "blank" : (k === "名前" || k === "クラス") ? "name" : "";  // 名前・クラスはスマホでカードの見出しになる
+      return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+
+// id の頭文字からエリア名を出す
+const AREA = { c: "コルニア", d: "ドラケンガルド", e: "エルヘイム", b: "バストリアス", a: "アルビオン" };
+
+Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
+  const byId = Object.fromEntries(stages.map(s => [s.id, s]));
+  // 敵Lv は名前の後ろに「(Lv.N)」として付け、列としては出さない
+  // 加入キャラは「加入：○○」として解放要素の先頭にまとめ、列としては出さない
+  const row = s => {
+    const parts = [];
+    if (s.加入キャラ && s.加入キャラ.length) parts.push(`加入：${s.加入キャラ.join("、")}`);
+    if (s.解放要素 && s.解放要素.length) parts.push(...s.解放要素);
+    return { 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n") };
+  };
+  document.getElementById("stages").innerHTML = render(route.stages.map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }));
+  document.getElementById("memo").innerHTML = route.memo && route.memo.length ? render(route.memo) : "";
+}).catch(e => {
+  document.getElementById("stages").innerHTML = `<p class="err">${esc(e.message)}</p>`;
+});
+</script>
+</body>
+</html>

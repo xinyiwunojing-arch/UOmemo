@@ -1,13 +1,11 @@
 {
   "title": "アルビオン",
-  "stages": ["a01", "a04", "a05", "a07", "a08", "a14", "a06", "a09", "a10", "a11", "a12", "a13", "a02", "a15", "a03"],
   "maps": ["ma1", "ma2", "ma3", "ma4", "ma5", "ma6"],
   "tablets": ["ta0", "ta1", "ta2", "ta3", "ta4"],
   "graves": ["ga1", "ga2", "ga3", "ga4", "ga5"],
   "towers": ["wa1", "wa2", "wa3", "wa4"],
   "stones": ["sa1", "sa2"],
   "windgates": ["va1", "va2"],
-  "memo": [],
   "classes": [],
   "formations": []
 }
