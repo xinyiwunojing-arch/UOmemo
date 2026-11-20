@@ -65,13 +65,13 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
 <main>
   <nav><a href="classes.html">← クラス一覧</a></nav>
   <h1 id="title">クラス</h1>
-  <nav id="pager"></nav>
   <div id="classes">読み込み中…</div>
 </main>
 <script>
 // data/classes.json のクラスを1つ（class.html?id=k01 など）、「基本情報」「各スキル」の表と「評価」で表示する
 // スキルの説明は skills.json・braves.json・leaders.json から引く
 // 評価は「総合：S」のように見出しにしてその下にコメントを文章で出す。総合を先に、続けて攻略メモ（strategy.html?p=1〜）のページ名と同じ順に各段階を出す
+// 各段階は、クラスが解放される段階から出す（それより前の段階は出さない）。解放がその段階の最後のボス戦なら次の段階から
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
@@ -99,6 +99,19 @@ const kv = rows => `<div class="wrap"><table class="kv"><tbody>${rows.map(([k, v
 const strategyTitles = (route, stages) => {
   const byId = Object.fromEntries(stages.map(s => [s.id, s]));
   return (route.sections || []).map(id => `${byId[id] ? byId[id].名前 : id}まで`);
+};
+
+// クラスの「解放」（例：「決起の矢先(Lv.2)」）のステージが、攻略メモの何段階目（0始まり）から使えるか
+// stages.json で同じ名前のステージを探し、route.json の stages の並びで位置を出す。解放がボス戦ならその次の段階から
+// ステージが見つからなければ 0（全段階を出す）
+const firstSection = (unlock, route, stages) => {
+  const name = String(unlock || "").split("(")[0];
+  const ids = stages.filter(s => s.名前 === name).map(s => s.id);
+  const pos = route.stages.findIndex(id => ids.includes(id));
+  if (pos < 0) return 0;
+  const secs = (route.sections || []).map(id => route.stages.indexOf(id));
+  const i = secs.findIndex(e => pos <= e);
+  return i < 0 ? secs.length : secs[i] === pos ? i + 1 : i;
 };
 
 Promise.all([load("classes"), load("skills"), load("braves"), load("leaders"), load("route"), load("stages")]).then(([list, skills, braves, leaders, route, stages]) => {
@@ -136,12 +149,10 @@ Promise.all([load("classes"), load("skills"), load("braves"), load("leaders"), l
     const block = (name, e) => { e = e || {};
       return `<h3>${name}：${rank(e)}</h3>`
         + (e.コメント ? `<p class="memo">${esc(e.コメント)}</p>` : '<p class="empty">（未記入）</p>'); };
-    // 総合 → 各段階（段階名は攻略メモの各ページへのリンク）
-    // 攻略メモにない段階名が classes.json にあれば、名前の違いに気づけるよう最後に出す
-    const extra = Object.keys(ev).filter(k => k !== "総合" && !titles.includes(k));
+    // 総合 → 各段階（段階名は攻略メモの各ページへのリンク）。解放される段階より前は出さない
+    const from = firstSection(c.解放, route, stages);
     const evals = `<h2>評価</h2>${block("総合", ev.総合)}`
-      + titles.map((k, i) => block(`<a href="strategy.html?p=${i + 1}">${esc(k)}</a>`, ev[k])).join("")
-      + extra.map(k => block(`${esc(k)}（攻略メモにない段階）`, ev[k])).join("");
+      + titles.map((k, i) => i < from ? "" : block(`<a href="strategy.html?p=${i + 1}">${esc(k)}</a>`, ev[k])).join("");
     return `<h3>基本情報</h3>${info}`
       + `<h3>リーダー効果</h3>${skt(leader)}<h3>アクティブスキル</h3>${skt(active)}`
       + `<h3>パッシブスキル</h3>${skt(passive)}<h3>ブレイブスキル</h3>${skt(brave)}${evals}`;
@@ -149,8 +160,6 @@ Promise.all([load("classes"), load("skills"), load("braves"), load("leaders"), l
   const c = list[idx];
   document.title = c.クラス;
   document.getElementById("title").textContent = c.クラス;
-  const link = x => `<a href="class.html?id=${encodeURIComponent(x.id)}">${esc(x.クラス)}</a>`;
-  document.getElementById("pager").innerHTML = [idx > 0 ? `← ${link(list[idx - 1])}` : "", idx < list.length - 1 ? `${link(list[idx + 1])} →` : ""].filter(Boolean).join("　｜　");
   document.getElementById("classes").innerHTML = html;
 }).catch(e => {
   document.getElementById("classes").innerHTML = `<p class="err">${esc(e.message)}</p>`;
