@@ -30,6 +30,7 @@ th { background:var(--head); white-space:nowrap; }
   td::before { content:attr(data-label) "："; color:var(--sub); font-size:.85rem; }
   td.name { display:block; font-weight:bold; }
   td.name::before { content:none; }
+  td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
   td.blank { display:none; }
 }
 </style>
