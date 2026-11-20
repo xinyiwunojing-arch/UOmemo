@@ -20,6 +20,9 @@ table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; }
 .empty, .err { color:var(--sub); }
+/* チェック欄（各行の先頭） */
+th.chk, td.chk { width:1.5rem; text-align:center; }
+td.chk input { width:1.2rem; height:1.2rem; margin:0; }
 /* スマホ幅では表を1件ずつのカード表示にする（項目名は各値の前に出す） */
 @media (max-width: 600px) {
   table, tbody, tr, td { display:block; width:auto; }
@@ -31,6 +34,10 @@ th { background:var(--head); white-space:nowrap; }
   td.name::before { content:none; }
   td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
   td.blank { display:none; }
+  /* チェック欄はカードの右上に置く */
+  tr { position:relative; padding-right:2.2rem; }  /* 右側をチェック欄のためにあけておく */
+  td.chk { position:absolute; top:.4rem; right:.6rem; padding:0; }
+  td.chk::before { content:none; }
   /* 闇商人の商品はスマホでも表のまま */
   table.plain { display:table; }
   table.plain thead { display:table-header-group; }
@@ -63,18 +70,32 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
 //   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
-function render(v) {
+// chk を渡すと、表の各行の先頭にチェック欄を付ける（「chk:行の id」で保存）
+function render(v, chk) {
   if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
   if (typeof v !== "object") return `<p>${esc(v)}</p>`;
   if (!Array.isArray(v)) v = [v];
   if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
   const keys = [...new Set(v.flatMap(Object.keys))].filter(k => k !== "id");  // id は表示しない
   const cell = x => x == null ? "" : esc(Array.isArray(x) ? x.join("、") : x);
-  return `<div class="wrap"><table><thead><tr>${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
-    <tbody>${v.map(r => `<tr>${keys.map(k => { const c = cell(r[k]);
+  const box = r => { const key = `${chk}:${r.id}`;
+    return `<td class="chk"><input type="checkbox" data-check="${esc(key)}"${checks[key] ? " checked" : ""} aria-label="チェック"></td>`; };
+  return `<div class="wrap"><table><thead><tr>${chk ? '<th class="chk">✓</th>' : ""}${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
+    <tbody>${v.map(r => `<tr>${chk ? box(r) : ""}${keys.map(k => { const c = cell(r[k]);
       const cls = c === "" ? "blank" : (k === "名前" || k === "クラス") ? "name" : "";  // 名前・クラスはスマホでカードの見出しになる
       return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
+
+// チェックはこのブラウザだけに保存する（localStorage の uomemo-checks に { "fielditems:fc1": true, … } の形で入れる）
+// 保存できない環境でも表示はそのまま動くようにする
+const CHECKS = "uomemo-checks";
+const checks = (() => { try { return JSON.parse(localStorage.getItem(CHECKS)) || {}; } catch (e) { return {}; } })();
+document.addEventListener("change", e => {
+  const key = e.target.dataset && e.target.dataset.check;
+  if (!key) return;
+  if (e.target.checked) checks[key] = true; else delete checks[key];
+  try { localStorage.setItem(CHECKS, JSON.stringify(checks)); } catch (err) {}
+});
 
 const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
@@ -107,7 +128,7 @@ load(ch).then(d => {
       if (all.length) after += `<p>クリア報酬：${esc(all.join("、"))}</p>`;
       after += [].concat(notes[key]).map(n => `<p>${esc(n)}</p>`).join("");
     }
-    document.getElementById(key).innerHTML = after + render(rows);
+    document.getElementById(key).innerHTML = after + render(rows, file);
     document.getElementById(`${key}-sec`).hidden = false;
   }) : null;
   return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("fielditems", "fielditems"), sub("blackmarket", "blackmarket"), sub("fieldquests", "fieldquests"), sub("stones", "stones"), sub("windgates", "windgates")]);
