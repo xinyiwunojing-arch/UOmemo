@@ -5,122 +5,72 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>クラス評価</title>
 <style>
-:root { --bg:#fff; --fg:#222; --sub:#666; --line:#ddd; --head:#f3f3f3; --link:#0b63c4; }
+:root { --bg:#fff; --fg:#222; --sub:#666; --line:#ddd; --head:#f3f3f3; --link:#0b63c4;
+        --rS:#b8860b; --rA:#c62828; --rB:#1565c0; --rC:#689f38; --rD:#757575; }
 @media (prefers-color-scheme: dark) {
-  :root { --bg:#161616; --fg:#e8e8e8; --sub:#aaa; --line:#3a3a3a; --head:#242424; --link:#6fb0ff; }
+  :root { --bg:#161616; --fg:#e8e8e8; --sub:#aaa; --line:#3a3a3a; --head:#242424; --link:#6fb0ff;
+          --rS:#ffb300; --rA:#ff6b6b; --rB:#64a8ff; --rC:#aed581; --rD:#9e9e9e; }
 }
 body { margin:0; padding:16px; background:var(--bg); color:var(--fg);
        font-family:system-ui, sans-serif; line-height:1.6; }
 main { max-width:960px; margin:0 auto; }
 a { color:var(--link); }
 h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
-h2 { font-size:1.15rem; border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-top:2rem; }
-summary { font-size:1rem; font-weight:bold; margin:1.2rem 0 .5rem; cursor:pointer; }
 .wrap { overflow-x:auto; }
 table { border-collapse:collapse; width:100%; font-size:.95rem; }
-th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
+th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; }
 th { background:var(--head); white-space:nowrap; }
-.empty, .err { color:var(--sub); }
-/* スマホ幅では表を1件ずつのカード表示にする（項目名は各値の前に出す） */
-@media (max-width: 600px) {
-  table, tbody, tr, td { display:block; width:auto; }
-  thead { display:none; }
-  tr { border:1px solid var(--line); border-radius:6px; padding:.4rem .6rem; margin-bottom:.6rem; }
-  td { display:inline-block; border:none; padding:.1rem 1rem .1rem 0; }
-  td::before { content:attr(data-label) "："; color:var(--sub); font-size:.85rem; }
-  td.name { display:block; font-weight:bold; }
-  td.name::before { content:none; }
-  td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
-  td.blank { display:none; }
-  /* 基本情報（kv）はスマホでも表のまま */
-  table.kv { display:table; width:100%; }
-  table.kv tbody { display:table-row-group; }
-  table.kv tr { display:table-row; border:none; padding:0; margin:0; }
-  table.kv th, table.kv td { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; }
-  table.kv td::before { content:none; }
-  /* スキル（sk）はスキルごとに並べ替えた小さな表にする：1段目 名前と消費（右詰め）、2〜3段目 数値（3列）、最後 説明 */
-  table.sk tr { display:grid; grid-template-columns:repeat(3, 1fr); padding:0; border-radius:0; border:none; border-top:1px solid var(--line); border-left:1px solid var(--line); }
-  table.sk td, table.sk td.blank { display:block; border:none; border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:.25rem .4rem; }
-  table.sk td::before { content:attr(data-label); display:block; font-size:.75rem; }
-  table.sk td.name, table.sk td[data-label="説明"] { grid-column:1 / -1; }
-  table.sk td.name { background:var(--head); }
-  table.sk tr:has(td[data-label="消費"]) td.name { grid-column:1 / 3; border-right:none; }
-  table.sk td[data-label="消費"] { background:var(--head); text-align:right; font-weight:bold; }
-  /* スマホでの並び：名前・消費／物理威力・魔法威力・ヒット数／命中倍率・タイプ・特性／説明 */
-  table.sk td.name { order:1; } table.sk td[data-label="消費"] { order:2; }
-  table.sk td[data-label="物理威力"] { order:3; } table.sk td[data-label="魔法威力"] { order:4; } table.sk td[data-label="ヒット数"] { order:5; }
-  table.sk td[data-label="命中倍率"] { order:6; } table.sk td[data-label="タイプ"] { order:7; } table.sk td[data-label="特性"] { order:8; }
-  table.sk td[data-label="説明"] { order:9; }
-  table.sk td.name::before, table.sk td[data-label="説明"]::before, table.sk td[data-label="消費"]::before { content:none; }
-}
-table.kv th { width:7em; }
-h2.cls { margin-top:2.5rem; }
-h3 { font-size:1rem; margin:1rem 0 .4rem; }
+/* 並び替え：総合評価／加入順のバー（1つのボタン。押すたびに切り替わり、選んでいる側が濃くなる）と、昇順・降順を切り替えるボタン */
+#sort { display:flex; gap:.5rem; margin-bottom:.8rem; }
+#sort button { font:inherit; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); cursor:pointer; white-space:nowrap; }
+#bar { display:flex; flex:1; padding:0; overflow:hidden; }
+#bar span { flex:1; padding:.35rem .6rem; text-align:center; }
+#bar span + span { border-left:1px solid var(--line); }
+#bar span.on { background:var(--head); font-weight:bold; }
+#dir { padding:.35rem .6rem; }
+td.rank { text-align:center; white-space:nowrap; font-weight:bold; }
+.rS { color:var(--rS); } .rA { color:var(--rA); } .rB { color:var(--rB); } .rC { color:var(--rC); } .rD { color:var(--rD); }
+.err { color:var(--sub); }
 </style>
 </head>
 <body>
 <main>
   <nav><a href="index.html">← 目次</a></nav>
   <h1>クラス評価</h1>
+  <div id="sort"><button id="bar"><span data-sort="rank">総合評価</span><span data-sort="join">加入順</span></button><button id="dir">🔼</button></div>
   <div id="classes">読み込み中…</div>
 </main>
 <script>
-// data/classes.json の全クラスを、クラスごとに「基本情報」「各スキル」の表と「評価」で表示する（解放されるエリアの順）
-// スキルの説明は skills.json・braves.json・leaders.json から引く
+// data/classes.json の全クラスを「総合｜クラス｜ネームド」の表で並べる。クラス名は個別ページ（class.html?id=k01 など）へのリンク
+// 表の上のバーを押すたびに「総合評価」「加入順」が切り替わり、🔼（昇順）／🔽（降順）のボタンで向きを切り替える。最初は加入順の昇順
+//   加入順：classes.json の並び（クラスの解放順）
+//   総合評価：S→A→B→C→D→その他→未記入（降順でも未記入は最後）。同じ評価どうしは加入順
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const RANKS = ["S", "A", "B", "C", "D"];
 
-// 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
-//   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
-function render(v) {
-  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
-  if (typeof v !== "object") return `<p>${esc(v)}</p>`;
-  if (!Array.isArray(v)) v = [v];
-  if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
-  const keys = [...new Set(v.flatMap(Object.keys))].filter(k => k !== "id");  // id は表示しない
-  const cell = x => x == null ? "" : esc(Array.isArray(x) ? x.join("、") : x);
-  return `<div class="wrap"><table><thead><tr>${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
-    <tbody>${v.map(r => `<tr>${keys.map(k => { const c = cell(r[k]);
-      const cls = c === "" ? "blank" : (k === "名前" || k === "クラス") ? "name" : "";  // 名前・クラスはスマホでカードの見出しになる
-      return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
-}
-
-const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
-
-// 項目｜内容 の2列の表（クラスの基本情報用）
-const kv = rows => `<div class="wrap"><table class="kv"><tbody>${rows.map(([k, v]) =>
-  `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join("")}</tbody></table></div>`;
-
-Promise.all([load("classes"), load("skills"), load("braves"), load("leaders")]).then(([list, skills, braves, leaders]) => {
-  const sk = Object.fromEntries(skills.map(x => [x.名前, x]));
-  const bv = Object.fromEntries(braves.map(x => [x.名前, x]));
-  const ld = Object.fromEntries(leaders.map(x => [x.名前, x]));
-  // 「名前(LvN)、…」を [名前, N] の並びに分ける
-  const withLv = str => (str || "").split("、").filter(Boolean).map(t => { const m = t.match(/^(.+)\((CC,)?Lv(\d+)\)$/); return m ? [m[1], (m[2] || "") + "Lv." + m[3]] : [t, ""]; });  // 「名前(Lv1)」「名前(CC,Lv25)」→ [名前, "Lv.1" / "CC,Lv.25"]
-  // ブレイブは「CC前のもの／CC後のもの」。CC後に増えるものに(CC)を付ける
-  const braveList = str => {
-    const [base, cc] = (str || "").split("／");
-    const names = s => (s || "").split("、").filter(Boolean).map(t => t.replace(/\(\d+\)$/, ""));
-    const b = names(base), c = cc === undefined ? [] : names(cc);
-    return [...b.map(n => [n, ""]), ...c.filter(n => !b.includes(n)).map(n => [n, "CC"])];
+fetch("data/classes.json").then(r => { if (!r.ok) throw new Error("data/classes.json が読めません"); return r.json(); }).then(list => {
+  const total = c => String(((c.評価 || {}).総合 || {}).評価 || "");
+  const rankKey = c => { const r = total(c); const i = RANKS.indexOf(r); return i >= 0 ? i : r ? RANKS.length : RANKS.length + 1; };
+  const row = c => { const r = total(c);
+    return `<tr><td class="rank${RANKS.includes(r) ? " r" + r : ""}">${esc(r)}</td>`
+      + `<td><a href="class.html?id=${encodeURIComponent(c.id)}">${esc(c.クラス)}</a></td><td>${esc((c.キャラ || []).join("、"))}</td></tr>`; };
+  let sort = "join", desc = false;
+  const show = () => {
+    const sign = desc ? -1 : 1;
+    const rows = list.map((c, i) => [c, i]).sort((a, b) => {
+      if (sort === "join") return sign * (a[1] - b[1]);
+      const ka = rankKey(a[0]), kb = rankKey(b[0]);
+      if (ka !== kb && (ka > RANKS.length || kb > RANKS.length)) return ka - kb;  // 未記入はいつも最後
+      return sign * (ka - kb || a[1] - b[1]);
+    });
+    document.getElementById("classes").innerHTML = `<div class="wrap"><table><thead><tr><th>総合</th><th>クラス</th><th>ネームド</th></tr></thead>`
+      + `<tbody>${rows.map(([c]) => row(c)).join("")}</tbody></table></div>`;
+    document.querySelectorAll("#bar span").forEach(x => x.classList.toggle("on", x.dataset.sort === sort));
+    document.getElementById("dir").textContent = desc ? "🔽" : "🔼";
   };
-  const html = list.map(c => {
-    const info = kv([["種別", c.種別], ["移動力", c.移動力], ["スタミナ", c.スタミナ], ["キャラ", (c.キャラ || []).join("、")], ["解放", c.解放]]);
-    const leader = (c.リーダー効果 || "").split("・").filter(Boolean).map(n => ({ 名前: n, 説明: (ld[n] || {}).効果 || "" }));
-    // 習得Lvは名前の後ろに付ける。威力などは appmedia の項目と同じものを並べる
-    const skillRow = (n, lv, pre) => { const x = sk[n] || {};
-      return { 名前: lv ? `${n}(${lv})` : n, 消費: `${pre}${x.消費 || ""}`, タイプ: x.タイプ || "", 物理威力: x.物理威力 || "", 魔法威力: x.魔法威力 || "",
-               ヒット数: x.ヒット数 || "", 命中倍率: x.命中倍率 || "", 特性: x.特性 || "", 説明: x.効果 || "" }; };
-    const active = withLv(c.アクティブスキル).map(([n, lv]) => skillRow(n, lv, "AP"));
-    const passive = withLv(c.パッシブスキル).map(([n, lv]) => skillRow(n, lv, "PP"));
-    const brave = braveList(c.ブレイブスキル).map(([n, note]) => ({ 名前: note ? `${n}(${note})` : n, 消費: `BP${(bv[n] || {}).消費 || ""}`, 説明: (bv[n] || {}).効果 || "" }));
-    // 評価とコメントは表に入れず、クラスの最後に文章で書く（空欄でも書く場所として出す）
-    const skt = rows => render(rows).replace("<table>", '<table class="sk">');  // スキルの表（スマホでも表のまま）
-    const evals = `<h3>評価</h3><p>序盤：${esc(c.序盤 || "")}　中盤：${esc(c.中盤 || "")}　終盤：${esc(c.終盤 || "")}</p><p>コメント：${esc(c.コメント || "")}</p>`;
-    return `<h2 class="cls">${esc(c.クラス)}</h2><h3>基本情報</h3>${info}`
-      + `<h3>リーダー効果</h3>${skt(leader)}<h3>アクティブスキル</h3>${skt(active)}`
-      + `<h3>パッシブスキル</h3>${skt(passive)}<h3>ブレイブスキル</h3>${skt(brave)}${evals}`;
-  }).join("");
-  document.getElementById("classes").innerHTML = html;
+  document.getElementById("bar").addEventListener("click", () => { sort = sort === "join" ? "rank" : "join"; show(); });
+  document.getElementById("dir").addEventListener("click", () => { desc = !desc; show(); });
+  show();
 }).catch(e => {
   document.getElementById("classes").innerHTML = `<p class="err">${esc(e.message)}</p>`;
 });
