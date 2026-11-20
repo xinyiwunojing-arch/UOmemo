@@ -21,19 +21,22 @@ table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; }
 .empty, .err { color:var(--sub); }
-/* スマホ幅ではステージごとに並べ替えた小さな表にする：1段目 名前とエリア（右詰め）、その下に報酬、解放要素を縦に並べる（空なら出さない） */
+/* スマホ幅ではステージごとに並べ替えた小さな表にする：1段目 名前、その下にエリア・報酬、解放要素を縦に並べる（空なら出さない） */
 @media (max-width: 600px) {
   table, tbody { display:block; }
   thead { display:none; }
   tr { display:grid; grid-template-columns:1fr 1fr; margin-bottom:.6rem; border-top:1px solid var(--line); border-left:1px solid var(--line); }
   td { display:block; border:none; border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:.25rem .4rem; }
   td::before { content:attr(data-label); display:block; font-size:.75rem; color:var(--sub); }
-  td.name, td[data-label="エリア"] { background:var(--head); }
-  td.name { font-weight:bold; border-right:none; }
-  td[data-label="エリア"] { text-align:right; }
+  td.name { background:var(--head); }
+  td.name { font-weight:bold; grid-column:1 / -1; }
+
   td.name::before, td[data-label="エリア"]::before { content:none; }
-  td[data-label="解放要素"], td[data-label="報酬"] { grid-column:1 / -1; }
-  td[data-label="報酬"] { order:1; } td[data-label="解放要素"] { order:2; }
+  /* エリアは名前の下に小さく左寄せ（名前と同じ見出しの段に見えるように） */
+  td[data-label="エリア"] { background:var(--head); font-size:.8rem; padding-top:0; color:var(--sub); }
+  td.name { border-bottom:none; }
+  td[data-label="エリア"], td[data-label="解放要素"], td[data-label="報酬"] { grid-column:1 / -1; }
+  td[data-label="エリア"] { order:1; } td[data-label="報酬"] { order:2; } td[data-label="解放要素"] { order:3; }
   td.blank[data-label="解放要素"], td.blank[data-label="報酬"] { display:none; }
 }
 </style>
