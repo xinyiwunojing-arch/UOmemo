@@ -15,7 +15,7 @@ main { max-width:960px; margin:0 auto; }
 a { color:var(--link); }
 h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
 h2 { font-size:1.15rem; border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-top:2rem; }
-h3 { font-size:1rem; margin:1.2rem 0 .5rem; }
+summary { font-size:1rem; font-weight:bold; margin:1.2rem 0 .5rem; cursor:pointer; }
 .wrap { overflow-x:auto; }
 table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
@@ -44,9 +44,9 @@ th { background:var(--head); white-space:nowrap; }
   <div id="memo"></div>
   <section id="pilgrim-sec" hidden>
     <h2>巡礼地</h2>
-    <div id="maps-sec" hidden><h3>宝の地図</h3><div id="maps"></div></div>
-    <div id="tablets-sec" hidden><h3>石板</h3><div id="tablets"></div></div>
-    <div id="graves-sec" hidden><h3>墓所</h3><div id="graves"></div></div>
+    <details id="maps-sec" hidden><summary>宝の地図</summary><div id="maps"></div></details>
+    <details id="tablets-sec" hidden><summary>石板</summary><div id="tablets"></div></details>
+    <details id="graves-sec" hidden><summary>墓所</summary><div id="graves"></div></details>
   </section>
   <h2>ユニット評価</h2>
   <div id="units"></div>
@@ -101,7 +101,7 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
     const byKey = Object.fromEntries(list.map(x => [x.id, x]));
     let rows = d[key].map(id => byKey[id] || { id, 状態: `${file}.json に未登録` });
-    // 石板・墓所の報酬はクエスト全体の報酬なので、表の列にせず表の下に独立して書く
+    // 石板・墓所の報酬はクエスト全体の報酬なので、表の列にせず表の上に独立して書く
     let after = "";
     const notes = { tablets: "※ヤーナの加入が必要", graves: "※シャロンの加入が必要" };
     if (key in notes) {
@@ -110,7 +110,7 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
       if (all.length) after += `<p>クリア報酬：${esc(all.join("、"))}</p>`;
       after += `<p>${esc(notes[key])}</p>`;
     }
-    document.getElementById(key).innerHTML = render(rows) + after;
+    document.getElementById(key).innerHTML = after + render(rows);
     document.getElementById(`${key}-sec`).hidden = false;
     document.getElementById("pilgrim-sec").hidden = false;
   }) : null;
