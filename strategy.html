@@ -44,12 +44,14 @@ th { background:var(--head); white-space:nowrap; }
 <body>
 <main>
   <nav><a href="index.html">← 目次</a></nav>
-  <h1>攻略メモ（攻略順）</h1>
+  <h1 id="title">攻略メモ（攻略順）</h1>
+  <nav id="pager"></nav>
   <div id="stages">読み込み中…</div>
   <div id="memo"></div>
 </main>
 <script>
-// data/route.json の stages に並べた順で、全エリアのステージを表示する（sections のボス戦で区切る）
+// data/route.json の stages に並べた順で、全エリアのステージを表示する
+// sections のボス戦で区切ってページを分ける（strategy.html?p=1〜）。p がなければ各ページへのリンクを出す
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
@@ -83,17 +85,23 @@ Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
     return { 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n"),
              報酬: s.報酬 || "" };
   };
-  // route.json の sections に書いたボス戦で区切り、区切りごとに「〜ボス名」の見出しを付ける
+  // ボス戦の後ろで区切る。最後のボス（一角獣の覇王）のページはその後のステージまで含める
+  const secs = route.sections || [];
   const groups = [[]];
-  route.stages.forEach(id => { groups[groups.length - 1].push(id); if ((route.sections || []).includes(id)) groups.push([]); });
-  if (!groups[groups.length - 1].length) groups.pop();
+  route.stages.forEach(id => { groups[groups.length - 1].push(id); if (secs.slice(0, -1).includes(id)) groups.push([]); });
   const nameOf = id => byId[id] ? byId[id].名前 : id;
-  const last = (route.sections || []).slice(-1)[0];
-  document.getElementById("stages").innerHTML = groups.map(g => {
-    const end = g[g.length - 1];
-    const title = (route.sections || []).includes(end) ? `〜${nameOf(end)}` : `${nameOf(last)}の後`;
-    return `<h2>${esc(title)}</h2>` + render(g.map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }));
-  }).join("");
+  const titles = groups.map((g, i) => `${nameOf(secs[i] || g[g.length - 1])}まで`);
+  const p = Number(new URLSearchParams(location.search).get("p"));
+  const link = i => `<a href="strategy.html?p=${i + 1}">${esc(titles[i])}</a>`;
+  if (!(p >= 1 && p <= groups.length)) {
+    document.getElementById("stages").innerHTML = `<ol>${groups.map((g, i) => `<li>${link(i)}</li>`).join("")}</ol>`;
+  } else {
+    const i = p - 1;
+    document.title = titles[i];
+    document.getElementById("title").textContent = titles[i];
+    document.getElementById("pager").innerHTML = [i > 0 ? `← ${link(i - 1)}` : "", i < groups.length - 1 ? `${link(i + 1)} →` : ""].filter(Boolean).join("　｜　");
+    document.getElementById("stages").innerHTML = render(groups[i].map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }));
+  }
   document.getElementById("memo").innerHTML = route.memo && route.memo.length ? render(route.memo) : "";
 }).catch(e => {
   document.getElementById("stages").innerHTML = `<p class="err">${esc(e.message)}</p>`;
