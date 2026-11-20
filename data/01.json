@@ -4,6 +4,7 @@
   "maps": ["mc1", "mc2", "mc3", "mc4", "mc5", "mc6"],
   "tablets": ["tc0", "tc1", "tc2", "tc3", "tc4"],
   "graves": ["gc1", "gc2", "gc3", "gc4", "gc5"],
+  "towers": ["wc1", "wc2"],
   "memo": [],
   "units": [],
   "formations": []
