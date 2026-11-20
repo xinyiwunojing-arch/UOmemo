@@ -21,6 +21,9 @@ table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; }
 .empty, .err { color:var(--sub); }
+/* チェック欄（各行の先頭） */
+th.chk, td.chk { width:1.5rem; text-align:center; }
+td.chk input { width:1.2rem; height:1.2rem; margin:0; }
 /* スマホ幅ではステージごとに並べ替えた小さな表にする：1段目 名前、その下にエリア・報酬、解放要素を縦に並べる（空なら出さない） */
 @media (max-width: 600px) {
   table, tbody { display:block; }
@@ -38,6 +41,11 @@ th { background:var(--head); white-space:nowrap; }
   td[data-label="エリア"], td[data-label="解放要素"], td[data-label="報酬"] { grid-column:1 / -1; }
   td[data-label="エリア"] { order:1; } td[data-label="報酬"] { order:2; } td[data-label="解放要素"] { order:3; }
   td.blank[data-label="解放要素"], td.blank[data-label="報酬"] { display:none; }
+  /* チェック欄は名前の段の右端に置く */
+  tr { position:relative; }
+  td.chk { position:absolute; top:.3rem; right:.4rem; border:none; padding:0; }
+  td.chk::before { content:none; }
+  td.name { padding-right:2rem; }
 }
 </style>
 </head>
@@ -56,18 +64,32 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
 //   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
-function render(v) {
+// chk を渡すと、表の各行の先頭にチェック欄を付ける（「chk:行の id」で保存）
+function render(v, chk) {
   if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
   if (typeof v !== "object") return `<p>${esc(v)}</p>`;
   if (!Array.isArray(v)) v = [v];
   if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
   const keys = [...new Set(v.flatMap(Object.keys))].filter(k => k !== "id");  // id は表示しない
   const cell = x => x == null ? "" : esc(Array.isArray(x) ? x.join("、") : x);
-  return `<div class="wrap"><table><thead><tr>${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
-    <tbody>${v.map(r => `<tr>${keys.map(k => { const c = cell(r[k]);
+  const box = r => { const key = `${chk}:${r.id}`;
+    return `<td class="chk"><input type="checkbox" data-check="${esc(key)}"${checks[key] ? " checked" : ""} aria-label="チェック"></td>`; };
+  return `<div class="wrap"><table><thead><tr>${chk ? '<th class="chk">✓</th>' : ""}${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
+    <tbody>${v.map(r => `<tr>${chk ? box(r) : ""}${keys.map(k => { const c = cell(r[k]);
       const cls = c === "" ? "blank" : (k === "名前" || k === "クラス") ? "name" : "";  // 名前・クラスはスマホでカードの見出しになる
       return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
+
+// チェックはこのブラウザだけに保存する（localStorage の uomemo-checks に { "stages:c01": true, … } の形で入れる。chapter.html と同じ場所）
+// 保存できない環境でも表示はそのまま動くようにする
+const CHECKS = "uomemo-checks";
+const checks = (() => { try { return JSON.parse(localStorage.getItem(CHECKS)) || {}; } catch (e) { return {}; } })();
+document.addEventListener("change", e => {
+  const key = e.target.dataset && e.target.dataset.check;
+  if (!key) return;
+  if (e.target.checked) checks[key] = true; else delete checks[key];
+  try { localStorage.setItem(CHECKS, JSON.stringify(checks)); } catch (err) {}
+});
 
 const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
@@ -82,7 +104,7 @@ Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
     const parts = [];
     if (s.加入キャラ && s.加入キャラ.length) parts.push(`加入：${s.加入キャラ.join("、")}`);
     if (s.解放要素 && s.解放要素.length) parts.push(...s.解放要素);
-    return { 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n"),
+    return { id: s.id, 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n"),
              報酬: s.報酬 || "" };
   };
   // ボス戦の後ろで区切る。最後のボス（一角獣の覇王）のページはその後のステージまで含める
@@ -99,7 +121,7 @@ Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
     document.title = titles[i];
     document.getElementById("title").textContent = titles[i];
     document.getElementById("pager").innerHTML = [i > 0 ? `← ${link(i - 1)}` : "", i < groups.length - 1 ? `${link(i + 1)} →` : ""].filter(Boolean).join("　｜　");
-    document.getElementById("stages").innerHTML = render(groups[i].map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }));
+    document.getElementById("stages").innerHTML = render(groups[i].map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }), "stages");
   }
   document.getElementById("memo").innerHTML = route.memo && route.memo.length ? render(route.memo) : "";
 }).catch(e => {
