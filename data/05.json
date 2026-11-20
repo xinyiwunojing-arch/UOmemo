@@ -3,7 +3,7 @@
   "maps": ["ma1", "ma2", "ma3", "ma4", "ma5", "ma6"],
   "tablets": ["ta0", "ta1", "ta2", "ta3", "ta4"],
   "graves": ["ga1", "ga2", "ga3", "ga4", "ga5"],
-  "towers": ["wa1", "wa2", "wa3", "wa4"],
+  "fielditems": ["wa1", "wa2", "wa3", "wa4"],
   "stones": ["sa1", "sa2"],
   "windgates": ["va1", "va2"]
 }

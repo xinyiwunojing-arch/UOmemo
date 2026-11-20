@@ -41,10 +41,9 @@ th { background:var(--head); white-space:nowrap; }
   <section id="maps-sec" hidden><h2>宝の地図</h2><div id="maps"></div></section>
   <section id="tablets-sec" hidden><h2>石板</h2><div id="tablets"></div></section>
   <section id="graves-sec" hidden><h2>墓所</h2><div id="graves"></div></section>
-  <section id="towers-sec" hidden><h2>塔・見張り台</h2><div id="towers"></div></section>
+  <section id="fielditems-sec" hidden><h2>フィールドアイテム</h2><div id="fielditems"></div></section>
   <section id="stones-sec" hidden><h2>環状列石</h2><div id="stones"></div></section>
   <section id="windgates-sec" hidden><h2>風門</h2><div id="windgates"></div></section>
-  <section id="fields-sec" hidden><h2>フィールド</h2><div id="fields"></div></section>
 </main>
 <script>
 // 使い方: chapter.html?ch=01 → data/01.json を表示する
@@ -72,7 +71,7 @@ const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error
 load(ch).then(d => {
   document.title = `${d.title} | 攻略メモ`;
   document.getElementById("title").textContent = d.title;
-  // 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・塔(towers.json)・環状列石(stones.json)・風門(windgates.json)・フィールド(fields.json)を、章データに並べた id で引いて表示する
+  // 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・フィールドアイテム(fielditems.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
   // 指定がない種類は見出しごと出さない
   const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
     const byKey = Object.fromEntries(list.map(x => [x.id, x]));
@@ -93,7 +92,7 @@ load(ch).then(d => {
     document.getElementById(key).innerHTML = after + render(rows);
     document.getElementById(`${key}-sec`).hidden = false;
   }) : null;
-  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("towers", "towers"), sub("stones", "stones"), sub("windgates", "windgates"), sub("fields", "fields")]);
+  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("fielditems", "fielditems"), sub("stones", "stones"), sub("windgates", "windgates")]);
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
   document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);
