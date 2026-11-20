@@ -51,8 +51,8 @@ th { background:var(--head); white-space:nowrap; }
     <details id="stones-sec" hidden><summary>環状列石</summary><div id="stones"></div></details>
     <details id="windgates-sec" hidden><summary>風門</summary><div id="windgates"></div></details>
   </section>
-  <h2>ユニット評価</h2>
-  <div id="units"></div>
+  <h2>クラス評価</h2>
+  <div id="classes"></div>
   <h2>使用編成</h2>
   <div id="formations"></div>
 </main>
@@ -73,7 +73,7 @@ function render(v) {
   const cell = x => x == null ? "" : esc(Array.isArray(x) ? x.join("、") : x);
   return `<div class="wrap"><table><thead><tr>${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
     <tbody>${v.map(r => `<tr>${keys.map(k => { const c = cell(r[k]);
-      const cls = c === "" ? "blank" : k === "名前" ? "name" : "";  // 名前はスマホでカードの見出しになる
+      const cls = c === "" ? "blank" : (k === "名前" || k === "クラス") ? "name" : "";  // 名前・クラスはスマホでカードの見出しになる
       return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
@@ -97,7 +97,13 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
   };
   document.getElementById("stages").innerHTML = render((d.stages || []).map(id => byId[id] ? withLv(byId[id]) : { id, 状態: "stages.json に未登録" }));
   document.getElementById("memo").innerHTML = d.memo ? render(d.memo) : "";
-  document.getElementById("units").innerHTML = render(d.units);
+  // クラス評価: classes.json のうち、この章までに解放されたクラスを全部並べる（解放された章の順。新しいものが下）
+  // ランク・コメントは章ごとに別。章データの classes に {id, ランク, コメント} を書いた分だけ埋まる
+  const showClasses = load("classes").then(list => {
+    const ev = Object.fromEntries((d.classes || []).map(e => [e.id, e]));
+    document.getElementById("classes").innerHTML = render(list.filter(c => c.解放章 <= ch).sort((x, y) => x.解放章.localeCompare(y.解放章)).map(c =>
+      ({ クラス: c.クラス, ランク: (ev[c.id] || {}).ランク || "", コメント: (ev[c.id] || {}).コメント || "" })));
+  });
   document.getElementById("formations").innerHTML = render(d.formations);
   // 巡礼地: 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・塔(towers.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
   // 指定がない種類は小見出しごと、どちらもない章は「巡礼地」ごと出さない
@@ -119,7 +125,7 @@ Promise.all([load(ch), load("stages")]).then(([d, stages]) => {
     document.getElementById(`${key}-sec`).hidden = false;
     document.getElementById("pilgrim-sec").hidden = false;
   }) : null;
-  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("towers", "towers"), sub("stones", "stones"), sub("windgates", "windgates")]);
+  return Promise.all([showClasses, sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("towers", "towers"), sub("stones", "stones"), sub("windgates", "windgates")]);
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
   document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);

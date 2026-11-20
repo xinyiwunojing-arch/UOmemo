@@ -8,6 +8,6 @@
   "stones": ["sa1", "sa2"],
   "windgates": ["va1", "va2"],
   "memo": [],
-  "units": [],
+  "classes": [],
   "formations": []
 }
