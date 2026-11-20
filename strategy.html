@@ -74,7 +74,8 @@ Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
     const parts = [];
     if (s.加入キャラ && s.加入キャラ.length) parts.push(`加入：${s.加入キャラ.join("、")}`);
     if (s.解放要素 && s.解放要素.length) parts.push(...s.解放要素);
-    return { 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n") };
+    return { 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n"),
+             報酬: (s.報酬 || "").split("、").filter(Boolean).join("\n") };  // 報酬は1つずつ改行
   };
   document.getElementById("stages").innerHTML = render(route.stages.map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }));
   document.getElementById("memo").innerHTML = route.memo && route.memo.length ? render(route.memo) : "";
