@@ -51,7 +51,7 @@ th { background:var(--head); white-space:nowrap; }
 </main>
 <script>
 // data/route.json の stages に並べた順で、全エリアのステージを表示する
-// sections のボス戦で区切ってページを分ける（strategy.html?p=1〜）。p がなければ各ページへのリンクを出す
+// sections のボス戦で区切ってページを分ける（strategy.html?p=1〜）。p がなければ1ページ目を出す
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
@@ -91,11 +91,10 @@ Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
   route.stages.forEach(id => { groups[groups.length - 1].push(id); if (secs.slice(0, -1).includes(id)) groups.push([]); });
   const nameOf = id => byId[id] ? byId[id].名前 : id;
   const titles = groups.map((g, i) => `${nameOf(secs[i] || g[g.length - 1])}まで`);
-  const p = Number(new URLSearchParams(location.search).get("p"));
+  const q = Number(new URLSearchParams(location.search).get("p"));
+  const p = q >= 1 && q <= groups.length ? q : 1;
   const link = i => `<a href="strategy.html?p=${i + 1}">${esc(titles[i])}</a>`;
-  if (!(p >= 1 && p <= groups.length)) {
-    document.getElementById("stages").innerHTML = `<ol>${groups.map((g, i) => `<li>${link(i)}</li>`).join("")}</ol>`;
-  } else {
+  {
     const i = p - 1;
     document.title = titles[i];
     document.getElementById("title").textContent = titles[i];
