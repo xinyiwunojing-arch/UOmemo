@@ -48,8 +48,6 @@ th { background:var(--head); white-space:nowrap; }
     <details id="stones-sec" hidden><summary>環状列石</summary><div id="stones"></div></details>
     <details id="windgates-sec" hidden><summary>風門</summary><div id="windgates"></div></details>
   </section>
-  <h2>クラス評価</h2>
-  <div id="classes"></div>
   <h2>使用編成</h2>
   <div id="formations"></div>
 </main>
@@ -79,13 +77,6 @@ const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error
 load(ch).then(d => {
   document.title = `${d.title} | 攻略メモ`;
   document.getElementById("title").textContent = d.title;
-  // クラス評価: classes.json のうち、この章までに解放されたクラスを全部並べる（解放された章の順。新しいものが下）
-  // ランク・コメントは章ごとに別。章データの classes に {id, ランク, コメント} を書いた分だけ埋まる
-  const showClasses = load("classes").then(list => {
-    const ev = Object.fromEntries((d.classes || []).map(e => [e.id, e]));
-    document.getElementById("classes").innerHTML = render(list.filter(c => c.解放章 <= ch).sort((x, y) => x.解放章.localeCompare(y.解放章)).map(c =>
-      ({ クラス: c.クラス, ランク: (ev[c.id] || {}).ランク || "", コメント: (ev[c.id] || {}).コメント || "" })));
-  });
   document.getElementById("formations").innerHTML = render(d.formations);
   // 巡礼地: 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・塔(towers.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
   // 指定がない種類は小見出しごと、どちらもない章は「巡礼地」ごと出さない
@@ -107,7 +98,7 @@ load(ch).then(d => {
     document.getElementById(`${key}-sec`).hidden = false;
     document.getElementById("pilgrim-sec").hidden = false;
   }) : null;
-  return Promise.all([showClasses, sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("towers", "towers"), sub("stones", "stones"), sub("windgates", "windgates")]);
+  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("towers", "towers"), sub("stones", "stones"), sub("windgates", "windgates")]);
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
   document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);

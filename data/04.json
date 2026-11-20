@@ -6,6 +6,5 @@
   "towers": ["wb1", "wb2", "wb3", "wb4"],
   "stones": ["sb1", "sb2"],
   "windgates": ["vb1", "vb2"],
-  "classes": [],
   "formations": []
 }
