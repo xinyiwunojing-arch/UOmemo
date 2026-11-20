@@ -49,7 +49,7 @@ th { background:var(--head); white-space:nowrap; }
   <div id="memo"></div>
 </main>
 <script>
-// data/route.json の stages に並べた順で、全エリアのステージを表示する
+// data/route.json の stages に並べた順で、全エリアのステージを表示する（sections のボス戦で区切る）
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
@@ -83,7 +83,17 @@ Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
     return { 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n"),
              報酬: s.報酬 || "" };
   };
-  document.getElementById("stages").innerHTML = render(route.stages.map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }));
+  // route.json の sections に書いたボス戦で区切り、区切りごとに「〜ボス名」の見出しを付ける
+  const groups = [[]];
+  route.stages.forEach(id => { groups[groups.length - 1].push(id); if ((route.sections || []).includes(id)) groups.push([]); });
+  if (!groups[groups.length - 1].length) groups.pop();
+  const nameOf = id => byId[id] ? byId[id].名前 : id;
+  const last = (route.sections || []).slice(-1)[0];
+  document.getElementById("stages").innerHTML = groups.map(g => {
+    const end = g[g.length - 1];
+    const title = (route.sections || []).includes(end) ? `〜${nameOf(end)}` : `${nameOf(last)}の後`;
+    return `<h2>${esc(title)}</h2>` + render(g.map(id => byId[id] ? row(byId[id]) : { id, 状態: "stages.json に未登録" }));
+  }).join("");
   document.getElementById("memo").innerHTML = route.memo && route.memo.length ? render(route.memo) : "";
 }).catch(e => {
   document.getElementById("stages").innerHTML = `<p class="err">${esc(e.message)}</p>`;
