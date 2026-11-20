@@ -15,7 +15,6 @@ main { max-width:960px; margin:0 auto; }
 a { color:var(--link); }
 h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
 h2 { font-size:1.15rem; border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-top:2rem; }
-summary { font-size:1rem; font-weight:bold; margin:1.2rem 0 .5rem; cursor:pointer; }
 .wrap { overflow-x:auto; }
 table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
@@ -39,17 +38,12 @@ th { background:var(--head); white-space:nowrap; }
 <main>
   <nav><a href="index.html">← 目次</a></nav>
   <h1 id="title">読み込み中…</h1>
-  <section id="pilgrim-sec" hidden>
-    <h2>巡礼地</h2>
-    <details id="maps-sec" hidden><summary>宝の地図</summary><div id="maps"></div></details>
-    <details id="tablets-sec" hidden><summary>石板</summary><div id="tablets"></div></details>
-    <details id="graves-sec" hidden><summary>墓所</summary><div id="graves"></div></details>
-    <details id="towers-sec" hidden><summary>塔・見張り台</summary><div id="towers"></div></details>
-    <details id="stones-sec" hidden><summary>環状列石</summary><div id="stones"></div></details>
-    <details id="windgates-sec" hidden><summary>風門</summary><div id="windgates"></div></details>
-  </section>
-  <h2>使用編成</h2>
-  <div id="formations"></div>
+  <section id="maps-sec" hidden><h2>宝の地図</h2><div id="maps"></div></section>
+  <section id="tablets-sec" hidden><h2>石板</h2><div id="tablets"></div></section>
+  <section id="graves-sec" hidden><h2>墓所</h2><div id="graves"></div></section>
+  <section id="towers-sec" hidden><h2>塔・見張り台</h2><div id="towers"></div></section>
+  <section id="stones-sec" hidden><h2>環状列石</h2><div id="stones"></div></section>
+  <section id="windgates-sec" hidden><h2>風門</h2><div id="windgates"></div></section>
 </main>
 <script>
 // 使い方: chapter.html?ch=01 → data/01.json を表示する
@@ -77,9 +71,8 @@ const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error
 load(ch).then(d => {
   document.title = `${d.title} | 攻略メモ`;
   document.getElementById("title").textContent = d.title;
-  document.getElementById("formations").innerHTML = render(d.formations);
-  // 巡礼地: 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・塔(towers.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
-  // 指定がない種類は小見出しごと、どちらもない章は「巡礼地」ごと出さない
+  // 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・塔(towers.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
+  // 指定がない種類は見出しごと出さない
   const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
     const byKey = Object.fromEntries(list.map(x => [x.id, x]));
     let rows = d[key].map(id => byKey[id] || { id, 状態: `${file}.json に未登録` });
@@ -96,7 +89,6 @@ load(ch).then(d => {
     }
     document.getElementById(key).innerHTML = after + render(rows);
     document.getElementById(`${key}-sec`).hidden = false;
-    document.getElementById("pilgrim-sec").hidden = false;
   }) : null;
   return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("towers", "towers"), sub("stones", "stones"), sub("windgates", "windgates")]);
 }).catch(e => {

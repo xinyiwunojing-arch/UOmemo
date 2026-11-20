@@ -4,6 +4,5 @@
   "tablets": ["tc0", "tc1", "tc2", "tc3", "tc4"],
   "graves": ["gc1", "gc2", "gc3", "gc4", "gc5"],
   "towers": ["wc1", "wc2"],
-  "stones": ["sc1", "sc2", "sc3"],
-  "formations": []
+  "stones": ["sc1", "sc2", "sc3"]
 }

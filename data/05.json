@@ -5,6 +5,5 @@
   "graves": ["ga1", "ga2", "ga3", "ga4", "ga5"],
   "towers": ["wa1", "wa2", "wa3", "wa4"],
   "stones": ["sa1", "sa2"],
-  "windgates": ["va1", "va2"],
-  "formations": []
+  "windgates": ["va1", "va2"]
 }
