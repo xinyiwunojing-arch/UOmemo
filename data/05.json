@@ -4,6 +4,7 @@
   "tablets": ["ta0", "ta1", "ta2", "ta3", "ta4"],
   "graves": ["ga1", "ga2", "ga3", "ga4", "ga5"],
   "fielditems": ["wa1", "wa2", "wa3", "wa4"],
+  "blackmarket": ["bk5"],
   "stones": ["sa1", "sa2"],
   "windgates": ["va1", "va2"]
 }
