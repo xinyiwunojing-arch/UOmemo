@@ -32,7 +32,30 @@ th { background:var(--head); white-space:nowrap; }
   td.name::before { content:none; }
   td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
   td.blank { display:none; }
+  /* 基本情報（kv）はスマホでも表のまま */
+  table.kv { display:table; width:100%; }
+  table.kv tbody { display:table-row-group; }
+  table.kv tr { display:table-row; border:none; padding:0; margin:0; }
+  table.kv th, table.kv td { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; }
+  table.kv td::before { content:none; }
+  /* スキル（sk）はスキルごとに並べ替えた小さな表にする：1段目 名前と消費（右詰め）、2〜3段目 数値（3列）、最後 説明 */
+  table.sk tr { display:grid; grid-template-columns:repeat(3, 1fr); padding:0; border-radius:0; border:none; border-top:1px solid var(--line); border-left:1px solid var(--line); }
+  table.sk td, table.sk td.blank { display:block; border:none; border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:.25rem .4rem; }
+  table.sk td::before { content:attr(data-label); display:block; font-size:.75rem; }
+  table.sk td.name, table.sk td[data-label="説明"] { grid-column:1 / -1; }
+  table.sk td.name { background:var(--head); }
+  table.sk tr:has(td[data-label="消費"]) td.name { grid-column:1 / 3; border-right:none; }
+  table.sk td[data-label="消費"] { background:var(--head); text-align:right; font-weight:bold; }
+  /* スマホでの並び：名前・消費／物理威力・魔法威力・ヒット数／命中倍率・タイプ・特性／説明 */
+  table.sk td.name { order:1; } table.sk td[data-label="消費"] { order:2; }
+  table.sk td[data-label="物理威力"] { order:3; } table.sk td[data-label="魔法威力"] { order:4; } table.sk td[data-label="ヒット数"] { order:5; }
+  table.sk td[data-label="命中倍率"] { order:6; } table.sk td[data-label="タイプ"] { order:7; } table.sk td[data-label="特性"] { order:8; }
+  table.sk td[data-label="説明"] { order:9; }
+  table.sk td.name::before, table.sk td[data-label="説明"]::before, table.sk td[data-label="消費"]::before { content:none; }
 }
+table.kv th { width:7em; }
+h2.cls { margin-top:2.5rem; }
+h3 { font-size:1rem; margin:1rem 0 .4rem; }
 </style>
 </head>
 <body>
@@ -42,7 +65,8 @@ th { background:var(--head); white-space:nowrap; }
   <div id="classes">読み込み中…</div>
 </main>
 <script>
-// data/classes.json の全クラスを表示する（解放されるエリアの順）
+// data/classes.json の全クラスを、クラスごとに「基本情報」「各スキル」の表と「評価」で表示する（解放されるエリアの順）
+// スキルの説明は skills.json・braves.json・leaders.json から引く
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
@@ -62,8 +86,41 @@ function render(v) {
 
 const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
-load("classes").then(list => {
-  document.getElementById("classes").innerHTML = render(list.map(({ id, ...c }) => c));
+// 項目｜内容 の2列の表（クラスの基本情報用）
+const kv = rows => `<div class="wrap"><table class="kv"><tbody>${rows.map(([k, v]) =>
+  `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join("")}</tbody></table></div>`;
+
+Promise.all([load("classes"), load("skills"), load("braves"), load("leaders")]).then(([list, skills, braves, leaders]) => {
+  const sk = Object.fromEntries(skills.map(x => [x.名前, x]));
+  const bv = Object.fromEntries(braves.map(x => [x.名前, x]));
+  const ld = Object.fromEntries(leaders.map(x => [x.名前, x]));
+  // 「名前(LvN)、…」を [名前, N] の並びに分ける
+  const withLv = str => (str || "").split("、").filter(Boolean).map(t => { const m = t.match(/^(.+)\((CC,)?Lv(\d+)\)$/); return m ? [m[1], (m[2] || "") + "Lv." + m[3]] : [t, ""]; });  // 「名前(Lv1)」「名前(CC,Lv25)」→ [名前, "Lv.1" / "CC,Lv.25"]
+  // ブレイブは「CC前のもの／CC後のもの」。CC後に増えるものに(CC)を付ける
+  const braveList = str => {
+    const [base, cc] = (str || "").split("／");
+    const names = s => (s || "").split("、").filter(Boolean).map(t => t.replace(/\(\d+\)$/, ""));
+    const b = names(base), c = cc === undefined ? [] : names(cc);
+    return [...b.map(n => [n, ""]), ...c.filter(n => !b.includes(n)).map(n => [n, "CC"])];
+  };
+  const html = list.map(c => {
+    const info = kv([["種別", c.種別], ["移動力", c.移動力], ["スタミナ", c.スタミナ], ["キャラ", (c.キャラ || []).join("、")], ["解放", c.解放]]);
+    const leader = (c.リーダー効果 || "").split("・").filter(Boolean).map(n => ({ 名前: n, 説明: (ld[n] || {}).効果 || "" }));
+    // 習得Lvは名前の後ろに付ける。威力などは appmedia の項目と同じものを並べる
+    const skillRow = (n, lv, pre) => { const x = sk[n] || {};
+      return { 名前: lv ? `${n}(${lv})` : n, 消費: `${pre}${x.消費 || ""}`, タイプ: x.タイプ || "", 物理威力: x.物理威力 || "", 魔法威力: x.魔法威力 || "",
+               ヒット数: x.ヒット数 || "", 命中倍率: x.命中倍率 || "", 特性: x.特性 || "", 説明: x.効果 || "" }; };
+    const active = withLv(c.アクティブスキル).map(([n, lv]) => skillRow(n, lv, "AP"));
+    const passive = withLv(c.パッシブスキル).map(([n, lv]) => skillRow(n, lv, "PP"));
+    const brave = braveList(c.ブレイブスキル).map(([n, note]) => ({ 名前: note ? `${n}(${note})` : n, 消費: `BP${(bv[n] || {}).消費 || ""}`, 説明: (bv[n] || {}).効果 || "" }));
+    // 評価とコメントは表に入れず、クラスの最後に文章で書く（空欄でも書く場所として出す）
+    const skt = rows => render(rows).replace("<table>", '<table class="sk">');  // スキルの表（スマホでも表のまま）
+    const evals = `<h3>評価</h3><p>序盤：${esc(c.序盤 || "")}　中盤：${esc(c.中盤 || "")}　終盤：${esc(c.終盤 || "")}</p><p>コメント：${esc(c.コメント || "")}</p>`;
+    return `<h2 class="cls">${esc(c.クラス)}</h2><h3>基本情報</h3>${info}`
+      + `<h3>リーダー効果</h3>${skt(leader)}<h3>アクティブスキル</h3>${skt(active)}`
+      + `<h3>パッシブスキル</h3>${skt(passive)}<h3>ブレイブスキル</h3>${skt(brave)}${evals}`;
+  }).join("");
+  document.getElementById("classes").innerHTML = html;
 }).catch(e => {
   document.getElementById("classes").innerHTML = `<p class="err">${esc(e.message)}</p>`;
 });
