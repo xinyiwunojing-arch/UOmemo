@@ -80,12 +80,14 @@ load(ch).then(d => {
     let after = "";
     const notes = { tablets: "※ヤーナの加入が必要", graves: "※シャロンの加入が必要",
                     stones: "※イシリオンの加入が必要（調べると隕鉄石を入手）",
-                    windgates: "※フィールドクエスト「風神の武具」の発生後に調べると、番人との戦闘" };
+                    windgates: ["※フィールドクエスト「風神の武具」の発生後に調べると、番人（Lv35・5人）との戦闘。敵を全滅させると武具を入手",
+                                "※「風神の武具」は「獅子王の遺産」クリア後、港町プリガシャーリの西の駐屯地で町人と話すと発生",
+                                "クエスト報酬：初級指南書、勲章×5、軍資金2000G"] };  // 複数行は配列で書く
     if (key in notes) {
       const all = rows.flatMap(r => r.報酬 || []);
       rows = rows.map(({ 報酬, ...r }) => r);
       if (all.length) after += `<p>クリア報酬：${esc(all.join("、"))}</p>`;
-      after += `<p>${esc(notes[key])}</p>`;
+      after += [].concat(notes[key]).map(n => `<p>${esc(n)}</p>`).join("");
     }
     document.getElementById(key).innerHTML = after + render(rows);
     document.getElementById(`${key}-sec`).hidden = false;
