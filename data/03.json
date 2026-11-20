@@ -3,7 +3,7 @@
   "maps": ["me1", "me2", "me3", "me4", "me5", "me6"],
   "tablets": ["te0", "te1", "te2", "te3", "te4"],
   "graves": ["ge1", "ge2", "ge3", "ge4", "ge5"],
-  "fielditems": ["we1", "we2", "we3"],
+  "fielditems": ["we1", "we2", "we3", "fe1", "fe2", "fe3", "fe4"],
   "blackmarket": ["bk3"],
   "stones": ["se1", "se2", "se3"],
   "windgates": ["ve1", "ve2"]
