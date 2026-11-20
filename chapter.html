@@ -31,6 +31,14 @@ th { background:var(--head); white-space:nowrap; }
   td.name::before { content:none; }
   td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
   td.blank { display:none; }
+  /* 闇商人の商品はスマホでも表のまま */
+  table.plain { display:table; }
+  table.plain thead { display:table-header-group; }
+  table.plain tbody { display:table-row-group; }
+  table.plain tr { display:table-row; border:none; padding:0; margin:0; }
+  table.plain th, table.plain td { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; font-weight:normal; }
+  table.plain th { font-weight:bold; }
+  table.plain td::before { content:none; }
 }
 </style>
 </head>
@@ -81,7 +89,7 @@ load(ch).then(d => {
     if (key === "blackmarket") {
       const b = rows[0];
       document.getElementById(key).innerHTML = `<p>場所：${esc(b.場所 || "")}</p>`
-        + `<p>※フィールドクエスト「闇商人」をクリアして「漆黒の交易許可証」を入手すると利用可能。取引は夜のみ</p>` + render(b.商品 || []);
+        + `<p>※フィールドクエスト「闇商人」をクリアして「漆黒の交易許可証」を入手すると利用可能。取引は夜のみ</p>` + render(b.商品 || []).replace("<table>", '<table class="plain">');
       document.getElementById(`${key}-sec`).hidden = false;
       return;
     }
