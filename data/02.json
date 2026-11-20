@@ -5,6 +5,7 @@
   "graves": ["gd1", "gd2", "gd3", "gd4", "gd5"],
   "fielditems": ["wd1", "wd2", "wd3", "fd1", "fd2", "fd3", "fd4", "fd5", "fd6", "fd7", "fd8", "fd9", "fd10"],
   "blackmarket": ["bk2"],
+  "fieldquests": ["qd1", "qd2", "qd3", "qd4", "qd5"],
   "stones": ["sd1", "sd2"],
   "windgates": ["vd1", "vd2"]
 }

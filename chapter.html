@@ -48,6 +48,7 @@ th { background:var(--head); white-space:nowrap; }
   <h1 id="title">読み込み中…</h1>
   <section id="fielditems-sec" hidden><h2>フィールドアイテム</h2><div id="fielditems"></div></section>
   <section id="blackmarket-sec" hidden><h2>闇商人</h2><div id="blackmarket"></div></section>
+  <section id="fieldquests-sec" hidden><h2>フィールドクエスト</h2><div id="fieldquests"></div></section>
   <section id="maps-sec" hidden><h2>宝の地図</h2><div id="maps"></div></section>
   <section id="tablets-sec" hidden><h2>石板</h2><div id="tablets"></div></section>
   <section id="graves-sec" hidden><h2>墓所</h2><div id="graves"></div></section>
@@ -80,7 +81,7 @@ const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error
 load(ch).then(d => {
   document.title = `${d.title} | 攻略メモ`;
   document.getElementById("title").textContent = d.title;
-  // 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・フィールドアイテム(fielditems.json)・闇商人(blackmarket.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
+  // 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・フィールドアイテム(fielditems.json)・闇商人(blackmarket.json)・フィールドクエスト(fieldquests.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
   // 指定がない種類は見出しごと出さない
   const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
     const byKey = Object.fromEntries(list.map(x => [x.id, x]));
@@ -109,7 +110,7 @@ load(ch).then(d => {
     document.getElementById(key).innerHTML = after + render(rows);
     document.getElementById(`${key}-sec`).hidden = false;
   }) : null;
-  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("fielditems", "fielditems"), sub("blackmarket", "blackmarket"), sub("stones", "stones"), sub("windgates", "windgates")]);
+  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("fielditems", "fielditems"), sub("blackmarket", "blackmarket"), sub("fieldquests", "fieldquests"), sub("stones", "stones"), sub("windgates", "windgates")]);
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
   document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);
