@@ -69,7 +69,7 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
 </main>
 <script>
 // data/classes.json のクラスを1つ（class.html?id=k01 など）、「基本情報」「各スキル」の表と「評価」で表示する
-// 雇用場所は classes.json の「雇用場所」（例：「コルニア（レブージェの里、スッドの町）、ドラケンガルド（ズノーバの町）」）をそのまま出す。空なら（未記入）
+// 雇用場所は classes.json の「雇用場所」（例：「コルニア（レブージェの里、スッドの町）、ドラケンガルド（ズノーバの町）」）を評価の後に出す。空なら（雇用できないクラス）見出しごと出さない
 // スキルの説明は skills.json・braves.json・leaders.json から引く
 // 評価は「総合：S」のように見出しにしてその下にコメントを文章で出す。総合を先に、続けて攻略メモ（strategy.html?p=1〜）のページ名と同じ順に各段階を出す
 // 各段階は、クラスが解放される段階から出す（それより前の段階は出さない）。解放がその段階の最後のボス戦なら次の段階から
@@ -154,10 +154,10 @@ Promise.all([load("classes"), load("skills"), load("braves"), load("leaders"), l
     const from = firstSection(c.解放, route, stages);
     const evals = `<h2>評価</h2>${block("総合", ev.総合)}`
       + titles.map((k, i) => i < from ? "" : block(`<a href="strategy.html?p=${i + 1}">${esc(k)}</a>`, ev[k])).join("");
+    const hire = c.雇用場所 ? `<h2>雇用場所</h2>${render(c.雇用場所)}` : "";
     return `<h3>基本情報</h3>${info}`
-      + `<h3>雇用場所</h3>${render(c.雇用場所)}`
       + `<h3>リーダー効果</h3>${skt(leader)}<h3>アクティブスキル</h3>${skt(active)}`
-      + `<h3>パッシブスキル</h3>${skt(passive)}<h3>ブレイブスキル</h3>${skt(brave)}${evals}`;
+      + `<h3>パッシブスキル</h3>${skt(passive)}<h3>ブレイブスキル</h3>${skt(brave)}${evals}${hire}`;
   }).join("");
   const c = list[idx];
   document.title = c.クラス;
