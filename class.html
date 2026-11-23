@@ -40,6 +40,13 @@ th { background:var(--head); white-space:nowrap; }
   table.kv tr { display:table-row; border:none; padding:0; margin:0; }
   table.kv th, table.kv td { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; }
   table.kv td::before { content:none; }
+  /* 雇用場所（hr）はスマホでもエリアごとに1つの表のまま（見出し行も出す） */
+  table.hr { display:table; width:100%; }
+  table.hr thead { display:table-header-group; }
+  table.hr tbody { display:table-row-group; }
+  table.hr tr { display:table-row; border:none; border-radius:0; padding:0; margin:0; }
+  table.hr th, table.hr td, table.hr td.blank { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; }
+  table.hr td::before { content:none; }
   /* スキル（sk）はスキルごとに並べ替えた小さな表にする：1段目 名前と消費（右詰め）、2〜3段目 数値（3列）、最後 説明 */
   table.sk tr { display:grid; grid-template-columns:repeat(3, 1fr); padding:0; border-radius:0; border:none; border-top:1px solid var(--line); border-left:1px solid var(--line); }
   table.sk td, table.sk td.blank { display:block; border:none; border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:.25rem .4rem; }
@@ -73,7 +80,7 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
 </main>
 <script>
 // data/classes.json のクラスを1つ（class.html?id=k01 など）、「基本情報」「各スキル」の表と「評価」で表示する
-// 雇用場所は classes.json の「雇用場所」（エリア名 → [{拠点, レベル, 性別（決まっているときだけ）}, …]）を評価の後に、エリアごとの小見出しと 拠点｜レベル｜性別 の表にして出す
+// 雇用場所は classes.json の「雇用場所」（エリア名 → [{拠点, レベル}, …]。性別が決まっている拠点は名前の後ろに(♂)(♀)(♂♀)）を評価の後に、エリアごとの小見出しと 拠点｜レベル の表にして出す（スマホでも表のまま）
 // CC できるクラス（名前が「ロード／ハイロード」の形）は「ロード」「ハイロード」ごとに分けて書き、ボタンで切り替える。雇用場所が書いてある方だけボタンを出す
 // どちらにも書いていなければ（雇用できないクラス）見出しごと出さない
 // スキルの説明は skills.json・braves.json・leaders.json から引く
@@ -163,7 +170,7 @@ Promise.all([load("classes"), load("skills"), load("braves"), load("leaders"), l
     const forms = c.クラス.split("／");
     const hireData = forms.length > 1 ? (c.雇用場所 || {}) : { [forms[0]]: c.雇用場所 || {} };
     const hireForms = forms.filter(f => Object.keys(hireData[f] || {}).length);
-    const areaTables = f => Object.entries(hireData[f]).map(([a, rows]) => `<h3>${esc(a)}</h3>${render(rows)}`).join("");
+    const areaTables = f => Object.entries(hireData[f]).map(([a, rows]) => `<h3>${esc(a)}</h3>${render(rows).replace("<table>", '<table class="hr">')}`).join("");
     const hire = !hireForms.length ? "" : "<h2>雇用場所</h2>" + (forms.length > 1
       ? `<div class="tabs">${hireForms.map((f, i) => `<button type="button" data-form="${i}" aria-pressed="${i === 0}">${esc(f)}</button>`).join("")}</div>`
         + hireForms.map((f, i) => `<div class="form" data-form="${i}"${i ? " hidden" : ""}>${areaTables(f)}</div>`).join("")
