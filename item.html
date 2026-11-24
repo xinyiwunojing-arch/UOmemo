@@ -64,9 +64,9 @@ const skillTable = (n, sk) => { const x = sk[n] || {};
   return `<div class="wrap"><table class="sk"><thead><tr>${Object.keys(r).map(k => `<th>${k}</th>`).join("")}</tr></thead>`
     + `<tbody><tr>${Object.entries(r).map(([k, v]) => `<td data-label="${k}"${k === "名前" ? ' class="name"' : ""}>${esc(v)}</td>`).join("")}</tr></tbody></table></div>`; };
 // 装備可能クラス：武器に「装備可能クラス」（classes.json のクラス名の並び）があればそのクラス、なければ classes.json の「武器」が武器の「種別」（剣・槍・斧など）と同じクラスを、
-// 「クラス」の1列の表で出す（クラス名は個別ページへのリンク）
+// 見出しなしの1列の表で出す（クラス名は個別ページへのリンク）
 const classTable = (x, classes) => { const list = classes.filter(c => x.装備可能クラス ? x.装備可能クラス.includes(c.クラス) : c.武器 === x.種別);
-  return list.length ? `<div class="wrap"><table class="cls"><thead><tr><th>クラス</th></tr></thead><tbody>`
+  return list.length ? `<div class="wrap"><table class="cls"><tbody>`
     + list.map(c => `<tr><td><a href="class.html?id=${encodeURIComponent(c.id)}">${esc(c.クラス)}</a></td></tr>`).join("")
     + `</tbody></table></div>` : '<p class="empty">（なし）</p>'; };
 const weaponHtml = (x, sk, classes) => {
