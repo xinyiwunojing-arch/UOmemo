@@ -55,7 +55,7 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ", items: "アイテム" };
 const q = new URLSearchParams(location.search), k = q.get("k"), id = q.get("id");
-// 武器はゲームの画面にあわせて、見出しなしの表で物理攻撃・魔法攻撃を1行に並べ、その下に装備時効果（装備スキルの名前・効果）を1行ずつ出す（ない分の行は出さない）
+// 武器・盾・アクセサリはゲームの画面にあわせて、見出しなしの表でステータス（物理攻撃・魔法攻撃／物理防御・魔法防御）を1行に並べ、その下に装備時効果（装備スキルの名前・効果）を1行ずつ出す（ない分の行は出さない）
 // 装備スキルは表の下に、class.html と同じスキルの表（data/skills.json から引く）で出す。入手方法など、ほかの項目はその下に見出しを付けて出す
 const has = s => s && s !== "なし";
 const skillTable = (n, sk) => { const x = sk[n] || {};
@@ -64,12 +64,12 @@ const skillTable = (n, sk) => { const x = sk[n] || {};
   return `<div class="wrap"><table class="sk"><thead><tr>${Object.keys(r).map(k => `<th>${k}</th>`).join("")}</tr></thead>`
     + `<tbody><tr>${Object.entries(r).map(([k, v]) => `<td data-label="${k}"${k === "名前" ? ' class="name"' : ""}>${esc(v)}</td>`).join("")}</tr></tbody></table></div>`; };
 // 装備可能クラス：武器に「装備可能クラス」（classes.json のクラス名の並び）があればそのクラス、なければ classes.json の「武器」が武器の「種別」（剣・槍・斧など）と同じクラスを、
-// 見出しなしの1列の表で出す（クラス名は個別ページへのリンク）
+// 見出しなしの1列の表で出す（クラス名は個別ページへのリンク）。武器と、「装備可能クラス」を書いた装備だけに出す
 const classTable = (x, classes) => { const list = classes.filter(c => x.装備可能クラス ? x.装備可能クラス.includes(c.クラス) : c.武器 === x.種別);
   return list.length ? `<div class="wrap"><table class="cls"><tbody>`
     + list.map(c => `<tr><td><a href="class.html?id=${encodeURIComponent(c.id)}">${esc(c.クラス)}</a></td></tr>`).join("")
     + `</tbody></table></div>` : '<p class="empty">（なし）</p>'; };
-const weaponHtml = (x, sk, classes) => {
+const equipHtml = (x, sk, classes) => {
   const stats = String(x.ステータス || "").split("、").map(s => s.replace(/(\d+)$/, " $1"));
   const effects = [x.装備スキル, ...String(x.効果 || "").split("、")].filter(has);
   const rest = Object.entries(x).filter(([k, v]) => !["id", "名前", "種別", "装備可能クラス", "ステータス", "効果", "装備スキル"].includes(k) && has(v));
@@ -77,32 +77,50 @@ const weaponHtml = (x, sk, classes) => {
     + effects.map(s => `<tr><td colspan="${stats.length}">${esc(s)}</td></tr>`).join("")
     + `</tbody></table>`
     + (has(x.装備スキル) ? `<h2>装備スキル</h2>${skillTable(x.装備スキル, sk)}` : "")
-    + `<h2>装備可能クラス</h2>${classTable(x, classes)}`
+    + (k === "weapons" || x.装備可能クラス ? `<h2>装備可能クラス</h2>${classTable(x, classes)}` : "")
     + rest.map(([k, v]) => `<h2>${esc(k)}</h2>` + (k === "入手方法" ? howTable(v)
         : `<p>${esc(Array.isArray(v) ? v.join("、") : v)}</p>`)).join("");
 };
-// 入手方法を「／」で分けて、種類（購入・クエスト・闘技場）ごとに小見出しを付け、その下に1列の表で並べる
+// 入手方法を「／」で分けて、種類ごとに小見出しを付け、その下に1列の表で並べる（同じ種類のものは1つの小見出しにまとめる）
 //   店で購入（12000G）：コルニア（港町ウーヴリール）→ 購入｜値段（12000G）は表の上に書き、表には 港町ウーヴリール(コルニア) と町を1行ずつ
-//   クエスト「…」の… → クエスト｜「…」の…　／　闘技場の… → 闘技場｜…　／　それ以外は小見出しなしでそのまま
-const howTable = v => String(v).split("／").map(t => {
-  const shop = t.match(/^店で購入（(.+?)）：(.+)$/);
-  if (shop) return ["購入", [...shop[2].matchAll(/([^、（]+)（([^）]+)）/g)].flatMap(([, area, ts]) => ts.split("、").map(town => `${town}(${area})`)), shop[1]];
-  const m = t.match(/^(クエスト|闘技場の)(.+)$/);
-  return m ? [m[1].replace(/の$/, ""), [m[2]]] : ["", [t]];
-}).map(([k, rows, price]) => (k ? `<h3>${esc(k)}</h3>` : "") + (price ? `<p>${esc(price)}</p>` : "")
-  + `<table class="how"><tbody>${rows.map(r => `<tr><td>${esc(r)}</td></tr>`).join("")}</tbody></table>`).join("");
+//   闇商人で購入（10000G）：コルニア、ドラケンガルド → 闇商人｜値段は表の上、表にはエリアを1行ずつ
+//   クエスト「…」の… → クエスト｜「…」の…　／　闘技場の…・闘技場で… → 闘技場｜…　／　天のかけら交換所で… → 天のかけら交換所｜…
+//   宝の地図「…」の報酬 → 宝の地図｜「…」の報酬　／　フィールド（…周辺）：… → フィールド｜…周辺：…　／　Aの初期装備 → 初期装備｜A（キャラを1行ずつ）
+//   それ以外 → その他｜そのまま
+const HOW = [
+  [/^店で購入（(.+?)）：(.+)$/, m => ["購入", [...m[2].matchAll(/([^、（]+)（([^）]+)）/g)].flatMap(([, area, ts]) => ts.split("、").map(town => `${town}(${area})`)), m[1]]],
+  [/^闇商人で購入（(.+?)）：(.+)$/, m => ["闇商人", m[2].split("、"), m[1]]],
+  [/^クエスト(.+)$/, m => ["クエスト", [m[1]]]],
+  [/^闘技場[のでに](.+)$/, m => ["闘技場", [m[1]]]],
+  [/^天のかけら交換所で(.+)$/, m => ["天のかけら交換所", [m[1]]]],
+  [/^宝の地図(.+)$/, m => ["宝の地図", [m[1]]]],
+  [/^フィールド（(.+?)）：(.+)$/, m => ["フィールド", [`${m[1]}：${m[2]}`]]],
+  [/^(.+)の初期装備$/, m => ["初期装備", m[1].split("、")]],
+];
+const howTable = v => {
+  const groups = [];
+  String(v).split("／").forEach(t => {
+    let r = ["その他", [t]];
+    for (const [re, f] of HOW) { const m = t.match(re); if (m) { r = f(m); break; } }
+    const [kind, rows, price = ""] = r, g = groups.find(g => g.kind === kind && g.price === price);
+    g ? g.rows.push(...rows) : groups.push({ kind, rows: [...rows], price });
+  });
+  return groups.map(g => `<h3>${esc(g.kind)}</h3>` + (g.price ? `<p>${esc(g.price)}</p>` : "")
+    + `<table class="how"><tbody>${g.rows.map(r => `<tr><td>${esc(r)}</td></tr>`).join("")}</tbody></table>`).join("");
+};
 
 (Object.hasOwn(KINDS, k || "") ? Promise.resolve() : Promise.reject(new Error(`k=${k || ""} の種類はありません（weapons・shields・accessories・items のどれか）`))).then(() => {
   const back = document.getElementById("back");
   back.href = `items.html?k=${k}`;
   back.textContent = `← おすすめ${KINDS[k]}`;
   const get = f => fetch(`data/${f}.json`).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
-  return Promise.all([get(k), k === "weapons" ? get("skills") : [], k === "weapons" ? get("classes") : []]);
+  const equip = k !== "items";
+  return Promise.all([get(k), equip ? get("skills") : [], equip ? get("classes") : []]);
 }).then(([list, skills, classes]) => {
   const x = list.find(x => x.id === id);
   if (!x) throw new Error(`id=${id || ""} の${KINDS[k]}は data/${k}.json にありません`);
   document.title = document.getElementById("title").textContent = x.名前;
-  if (k === "weapons") { document.getElementById("item").innerHTML = weaponHtml(x, Object.fromEntries(skills.map(s => [s.名前, s])), classes); return; }
+  if (k !== "items") { document.getElementById("item").innerHTML = equipHtml(x, Object.fromEntries(skills.map(s => [s.名前, s])), classes); return; }
   const rows = Object.entries(x).filter(([k]) => k !== "id" && k !== "名前")
     .map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(Array.isArray(v) ? v.join("、") : v)}</td></tr>`).join("");
   document.getElementById("item").innerHTML = `<table><tbody>${rows}</tbody></table>`;
