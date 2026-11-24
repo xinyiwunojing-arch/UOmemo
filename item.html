@@ -17,7 +17,29 @@ h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
 table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; width:6em; }
+h2 { font-size:1.1rem; margin:1.5rem 0 .5rem; }
+.weapon td { width:50%; }
+.wrap { overflow-x:auto; }
+table.sk th { width:auto; }
+h3 { font-size:1rem; margin:1rem 0 .4rem; }
 .empty, .err { color:var(--sub); }
+/* 装備スキルの表（sk）は class.html のスキルの表と同じ見た目にする。スマホ幅では 1段目 名前と消費（右詰め）、2〜3段目 数値（3列）、最後 説明 */
+@media (max-width: 600px) {
+  table.sk, table.sk tbody, table.sk td { display:block; width:auto; }
+  table.sk thead { display:none; }
+  table.sk tr { display:grid; grid-template-columns:repeat(3, 1fr); border-top:1px solid var(--line); border-left:1px solid var(--line); }
+  table.sk td { border:none; border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:.25rem .4rem; }
+  table.sk td::before { content:attr(data-label); display:block; font-size:.75rem; color:var(--sub); }
+  table.sk td.name, table.sk td[data-label="説明"] { grid-column:1 / -1; }
+  table.sk td.name { background:var(--head); font-weight:bold; }
+  table.sk tr:has(td[data-label="消費"]) td.name { grid-column:1 / 3; border-right:none; }
+  table.sk td[data-label="消費"] { background:var(--head); text-align:right; font-weight:bold; }
+  table.sk td.name { order:1; } table.sk td[data-label="消費"] { order:2; }
+  table.sk td[data-label="物理威力"] { order:3; } table.sk td[data-label="魔法威力"] { order:4; } table.sk td[data-label="ヒット数"] { order:5; }
+  table.sk td[data-label="命中倍率"] { order:6; } table.sk td[data-label="タイプ"] { order:7; } table.sk td[data-label="特性"] { order:8; }
+  table.sk td[data-label="説明"] { order:9; }
+  table.sk td.name::before, table.sk td[data-label="説明"]::before, table.sk td[data-label="消費"]::before { content:none; }
+}
 </style>
 </head>
 <body>
@@ -33,16 +55,48 @@ th { background:var(--head); white-space:nowrap; width:6em; }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ", items: "アイテム" };
 const q = new URLSearchParams(location.search), k = q.get("k"), id = q.get("id");
+// 武器はゲームの画面にあわせて、見出しなしの表で物理攻撃・魔法攻撃を1行に並べ、その下に装備時効果（装備スキルの名前・効果）を3行で出す（足りない行は空欄）
+// 装備スキルは表の下に、class.html と同じスキルの表（data/skills.json から引く）で出す。入手方法など、ほかの項目はその下に見出しを付けて出す
+const has = s => s && s !== "なし";
+const skillTable = (n, sk) => { const x = sk[n] || {};
+  const r = { 名前: n, 消費: `${x.種類 === "パッシブ" ? "PP" : "AP"}${x.消費 || ""}`, タイプ: x.タイプ || "", 物理威力: x.物理威力 || "", 魔法威力: x.魔法威力 || "",
+              ヒット数: x.ヒット数 || "", 命中倍率: x.命中倍率 || "", 特性: x.特性 || "", 説明: x.効果 || "" };
+  return `<div class="wrap"><table class="sk"><thead><tr>${Object.keys(r).map(k => `<th>${k}</th>`).join("")}</tr></thead>`
+    + `<tbody><tr>${Object.entries(r).map(([k, v]) => `<td data-label="${k}"${k === "名前" ? ' class="name"' : ""}>${esc(v)}</td>`).join("")}</tr></tbody></table></div>`; };
+const weaponHtml = (x, sk) => {
+  const stats = String(x.ステータス || "").split("、").map(s => s.replace(/(\d+)$/, " $1"));
+  const effects = [x.装備スキル, ...String(x.効果 || "").split("、")].filter(has);
+  while (effects.length < 3) effects.push("");
+  const rest = Object.entries(x).filter(([k, v]) => !["id", "名前", "ステータス", "効果", "装備スキル"].includes(k) && has(v));
+  return `<table class="weapon"><tbody><tr>${stats.map(s => `<td>${esc(s)}</td>`).join("")}</tr>`
+    + effects.map(s => `<tr><td colspan="${stats.length}">${s ? esc(s) : "&nbsp;"}</td></tr>`).join("")
+    + `</tbody></table>`
+    + (has(x.装備スキル) ? `<h2>装備スキル</h2>${skillTable(x.装備スキル, sk)}` : "")
+    + rest.map(([k, v]) => `<h2>${esc(k)}</h2>` + (k === "入手方法" ? howTable(v)
+        : `<p>${esc(Array.isArray(v) ? v.join("、") : v)}</p>`)).join("");
+};
+// 入手方法を「／」で分けて、種類（購入・クエスト・闘技場）ごとに小見出しを付け、その下に1列の表で並べる
+//   店で購入（12000G）：コルニア（港町ウーヴリール）→ 購入｜値段（12000G）は表の上に書き、表には 港町ウーヴリール(コルニア) と町を1行ずつ
+//   クエスト「…」の… → クエスト｜「…」の…　／　闘技場の… → 闘技場｜…　／　それ以外は小見出しなしでそのまま
+const howTable = v => String(v).split("／").map(t => {
+  const shop = t.match(/^店で購入（(.+?)）：(.+)$/);
+  if (shop) return ["購入", [...shop[2].matchAll(/([^、（]+)（([^）]+)）/g)].flatMap(([, area, ts]) => ts.split("、").map(town => `${town}(${area})`)), shop[1]];
+  const m = t.match(/^(クエスト|闘技場の)(.+)$/);
+  return m ? [m[1].replace(/の$/, ""), [m[2]]] : ["", [t]];
+}).map(([k, rows, price]) => (k ? `<h3>${esc(k)}</h3>` : "") + (price ? `<p>${esc(price)}</p>` : "")
+  + `<table class="how"><tbody>${rows.map(r => `<tr><td>${esc(r)}</td></tr>`).join("")}</tbody></table>`).join("");
 
 (Object.hasOwn(KINDS, k || "") ? Promise.resolve() : Promise.reject(new Error(`k=${k || ""} の種類はありません（weapons・shields・accessories・items のどれか）`))).then(() => {
   const back = document.getElementById("back");
   back.href = `items.html?k=${k}`;
   back.textContent = `← おすすめ${KINDS[k]}`;
-  return fetch(`data/${k}.json`);
-}).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${k}.json が読めません`); return r.json(); }).then(list => {
+  const get = f => fetch(`data/${f}.json`).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+  return Promise.all([get(k), k === "weapons" ? get("skills") : []]);
+}).then(([list, skills]) => {
   const x = list.find(x => x.id === id);
   if (!x) throw new Error(`id=${id || ""} の${KINDS[k]}は data/${k}.json にありません`);
   document.title = document.getElementById("title").textContent = x.名前;
+  if (k === "weapons") { document.getElementById("item").innerHTML = weaponHtml(x, Object.fromEntries(skills.map(s => [s.名前, s]))); return; }
   const rows = Object.entries(x).filter(([k]) => k !== "id" && k !== "名前")
     .map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(Array.isArray(v) ? v.join("、") : v)}</td></tr>`).join("");
   document.getElementById("item").innerHTML = `<table><tbody>${rows}</tbody></table>`;
