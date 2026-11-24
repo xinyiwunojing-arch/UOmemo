@@ -22,6 +22,7 @@ h2 { font-size:1.1rem; margin:1.5rem 0 .5rem; }
 .wrap { overflow-x:auto; }
 table.sk th, table.cls th { width:auto; }
 h3 { font-size:1rem; margin:1rem 0 .4rem; }
+.how td.area { width:8em; white-space:nowrap; }
 .empty, .err { color:var(--sub); }
 /* 装備スキルの表（sk）は class.html のスキルの表と同じ見た目にする。スマホ幅では 1段目 名前と消費（右詰め）、2〜3段目 数値（3列）、最後 説明 */
 @media (max-width: 600px) {
@@ -82,12 +83,12 @@ const equipHtml = (x, sk, classes) => {
         : `<p>${esc(Array.isArray(v) ? v.join("、") : v)}</p>`)).join("");
 };
 // 入手方法を「／」で分けて、種類ごとに小見出しを付け、その下に1列の表で並べる（同じ種類のものは1つの小見出しにまとめる）
-//   購入（12000G）：コルニア（港町ウーヴリール、闇商人）→ 購入｜値段（12000G）は表の上に書き、表には 港町ウーヴリール(コルニア) 闇商人(コルニア) と1行ずつ
+//   購入（12000G）：コルニア（港町ウーヴリール、闇商人）→ 購入｜値段（12000G）は表の上に書き、表は エリア｜町 の2列（エリアは同じものを縦にまとめる）
 //   クエスト「…」の… → クエスト｜「…」の…　／　闘技場の…・闘技場で… → 闘技場｜…　／　天のかけら交換所で… → 天のかけら交換所｜…
 //   宝の地図「…」の報酬 → 宝の地図｜「…」の報酬　／　フィールド（…周辺）：… → フィールド｜…周辺：…　／　Aの初期装備 → 初期装備｜A（キャラを1行ずつ）
 //   それ以外 → その他｜そのまま
 const HOW = [
-  [/^購入（(.+?)）：(.+)$/, m => ["購入", [...m[2].matchAll(/([^、（]+)（([^）]+)）/g)].flatMap(([, area, ts]) => ts.split("、").map(town => `${town}(${area})`)), m[1]]],
+  [/^購入（(.+?)）：(.+)$/, m => ["購入", [...m[2].matchAll(/([^、（]+)（([^）]+)）/g)].flatMap(([, area, ts]) => ts.split("、").map(town => [area, town])), m[1]]],
   [/^クエスト(.+)$/, m => ["クエスト", [m[1]]]],
   [/^闘技場[のでに](.+)$/, m => ["闘技場", [m[1]]]],
   [/^天のかけら交換所で(.+)$/, m => ["天のかけら交換所", [m[1]]]],
@@ -104,7 +105,13 @@ const howTable = v => {
     g ? g.rows.push(...rows) : groups.push({ kind, rows: [...rows], price });
   });
   return groups.map(g => `<h3>${esc(g.kind)}</h3>` + (g.price ? `<p>${esc(g.price)}</p>` : "")
-    + `<table class="how"><tbody>${g.rows.map(r => `<tr><td>${esc(r)}</td></tr>`).join("")}</tbody></table>`).join("");
+    + `<table class="how"><tbody>${g.rows.map((r, i, rs) => {
+      if (!Array.isArray(r)) return `<tr><td>${esc(r)}</td></tr>`;
+      const [area, town] = r;  // 購入：エリア｜町。エリアは同じものが続く最初の行にだけ出し、行をまとめる
+      if (i > 0 && Array.isArray(rs[i - 1]) && rs[i - 1][0] === area) return `<tr><td>${esc(town)}</td></tr>`;
+      let n = 1; while (Array.isArray(rs[i + n]) && rs[i + n][0] === area) n++;
+      return `<tr><td class="area" rowspan="${n}">${esc(area)}</td><td>${esc(town)}</td></tr>`;
+    }).join("")}</tbody></table>`).join("");
 };
 
 (Object.hasOwn(KINDS, k || "") ? Promise.resolve() : Promise.reject(new Error(`k=${k || ""} の種類はありません（weapons・shields・accessories・items のどれか）`))).then(() => {
