@@ -111,7 +111,7 @@ const howTable = v => {
   const back = document.getElementById("back");
   back.href = `items.html?k=${k}`;
   back.textContent = `← おすすめ${KINDS[k]}`;
-  const get = f => fetch(`data/${f}.json`).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+  const get = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
   const equip = k !== "items";
   return Promise.all([get(k), equip ? get("skills") : [], equip ? get("classes") : []]);
 }).then(([list, skills, classes]) => {
