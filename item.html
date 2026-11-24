@@ -55,7 +55,7 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ", items: "アイテム" };
 const q = new URLSearchParams(location.search), k = q.get("k"), id = q.get("id");
-// 武器はゲームの画面にあわせて、見出しなしの表で物理攻撃・魔法攻撃を1行に並べ、その下に装備時効果（装備スキルの名前・効果）を3行で出す（足りない行は空欄）
+// 武器はゲームの画面にあわせて、見出しなしの表で物理攻撃・魔法攻撃を1行に並べ、その下に装備時効果（装備スキルの名前・効果）を1行ずつ出す（ない分の行は出さない）
 // 装備スキルは表の下に、class.html と同じスキルの表（data/skills.json から引く）で出す。入手方法など、ほかの項目はその下に見出しを付けて出す
 const has = s => s && s !== "なし";
 const skillTable = (n, sk) => { const x = sk[n] || {};
@@ -72,10 +72,9 @@ const classTable = (x, classes) => { const list = classes.filter(c => x.装備�
 const weaponHtml = (x, sk, classes) => {
   const stats = String(x.ステータス || "").split("、").map(s => s.replace(/(\d+)$/, " $1"));
   const effects = [x.装備スキル, ...String(x.効果 || "").split("、")].filter(has);
-  while (effects.length < 3) effects.push("");
   const rest = Object.entries(x).filter(([k, v]) => !["id", "名前", "種別", "装備可能クラス", "ステータス", "効果", "装備スキル"].includes(k) && has(v));
   return `<h2>基本性能</h2><table class="weapon"><tbody><tr>${stats.map(s => `<td>${esc(s)}</td>`).join("")}</tr>`
-    + effects.map(s => `<tr><td colspan="${stats.length}">${s ? esc(s) : "&nbsp;"}</td></tr>`).join("")
+    + effects.map(s => `<tr><td colspan="${stats.length}">${esc(s)}</td></tr>`).join("")
     + `</tbody></table>`
     + (has(x.装備スキル) ? `<h2>装備スキル</h2>${skillTable(x.装備スキル, sk)}` : "")
     + `<h2>装備可能クラス</h2>${classTable(x, classes)}`
