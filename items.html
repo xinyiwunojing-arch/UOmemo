@@ -14,6 +14,7 @@ body { margin:0; padding:16px; background:var(--bg); color:var(--fg);
 main { max-width:960px; margin:0 auto; }
 a { color:var(--link); }
 h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
+h2 { font-size:1.1rem; margin:1.5rem 0 .5rem; }
 .empty, .err { color:var(--sub); }
 </style>
 </head>
@@ -27,7 +28,7 @@ h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
 // おすすめの武器・盾・アクセサリ・アイテムを、種類ごとに表示する（items.html?k=weapons など）
 //   k = weapons（武器）→ data/weapons.json ／ shields（盾）→ data/shields.json
 //       accessories（アクセサリ）→ data/accessories.json ／ items（アイテム）→ data/items.json
-// それぞれ、名前を JSON に書いた順に並べる。名前は個別ページ（item.html?k=weapons&id=w01 など）へのリンク
+// それぞれ、分類（なければ種別）ごとの見出しの下に、名前を JSON に書いた順に並べる。名前は個別ページ（item.html?k=weapons&id=w01 など）へのリンク
 // まだファイルがない種類は（未記入）と出す
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ", items: "アイテム" };
@@ -38,7 +39,12 @@ const k = new URLSearchParams(location.search).get("k");
   return fetch(`data/${k}.json`);
 }).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${k}.json が読めません`); return r.json(); }).then(list => {
   const item = x => `<li><a href="item.html?k=${k}&id=${encodeURIComponent(x.id)}">${esc(x.名前)}</a></li>`;
-  document.getElementById("items").innerHTML = list.length ? `<ul>${list.map(item).join("")}</ul>` : '<p class="empty">（未記入）</p>';
+  // 分類（なければ種別）ごとに見出しを付ける。見出しは最初に出てくる順、中は JSON の順。どちらもないものは最後に「未分類」でまとめる
+  const groups = new Map();
+  list.forEach(x => { const g = x.分類 || x.種別 || ""; groups.has(g) ? groups.get(g).push(x) : groups.set(g, [x]); });
+  if (groups.has("")) { const rest = groups.get(""); groups.delete(""); groups.set("未分類", rest); }
+  document.getElementById("items").innerHTML = list.length ? [...groups].map(([g, xs]) =>
+    `<h2>${esc(g)}</h2><ul>${xs.map(item).join("")}</ul>`).join("") : '<p class="empty">（未記入）</p>';
 }).catch(e => {
   document.getElementById("items").innerHTML = `<p class="err">${esc(e.message)}</p>`;
 });
