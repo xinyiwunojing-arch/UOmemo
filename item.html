@@ -20,7 +20,7 @@ th { background:var(--head); white-space:nowrap; width:6em; }
 h2 { font-size:1.1rem; margin:1.5rem 0 .5rem; }
 .weapon td { width:50%; }
 .wrap { overflow-x:auto; }
-table.sk th { width:auto; }
+table.sk th, table.cls th { width:auto; }
 h3 { font-size:1rem; margin:1rem 0 .4rem; }
 .empty, .err { color:var(--sub); }
 /* 装備スキルの表（sk）は class.html のスキルの表と同じ見た目にする。スマホ幅では 1段目 名前と消費（右詰め）、2〜3段目 数値（3列）、最後 説明 */
@@ -63,15 +63,22 @@ const skillTable = (n, sk) => { const x = sk[n] || {};
               ヒット数: x.ヒット数 || "", 命中倍率: x.命中倍率 || "", 特性: x.特性 || "", 説明: x.効果 || "" };
   return `<div class="wrap"><table class="sk"><thead><tr>${Object.keys(r).map(k => `<th>${k}</th>`).join("")}</tr></thead>`
     + `<tbody><tr>${Object.entries(r).map(([k, v]) => `<td data-label="${k}"${k === "名前" ? ' class="name"' : ""}>${esc(v)}</td>`).join("")}</tr></tbody></table></div>`; };
-const weaponHtml = (x, sk) => {
+// 装備可能クラス：武器に「装備可能クラス」（classes.json のクラス名の並び）があればそのクラス、なければ classes.json の「武器」が武器の「種別」（剣・槍・斧など）と同じクラスを、
+// 「クラス」の1列の表で出す（クラス名は個別ページへのリンク）
+const classTable = (x, classes) => { const list = classes.filter(c => x.装備可能クラス ? x.装備可能クラス.includes(c.クラス) : c.武器 === x.種別);
+  return list.length ? `<div class="wrap"><table class="cls"><thead><tr><th>クラス</th></tr></thead><tbody>`
+    + list.map(c => `<tr><td><a href="class.html?id=${encodeURIComponent(c.id)}">${esc(c.クラス)}</a></td></tr>`).join("")
+    + `</tbody></table></div>` : '<p class="empty">（なし）</p>'; };
+const weaponHtml = (x, sk, classes) => {
   const stats = String(x.ステータス || "").split("、").map(s => s.replace(/(\d+)$/, " $1"));
   const effects = [x.装備スキル, ...String(x.効果 || "").split("、")].filter(has);
   while (effects.length < 3) effects.push("");
-  const rest = Object.entries(x).filter(([k, v]) => !["id", "名前", "ステータス", "効果", "装備スキル"].includes(k) && has(v));
-  return `<table class="weapon"><tbody><tr>${stats.map(s => `<td>${esc(s)}</td>`).join("")}</tr>`
+  const rest = Object.entries(x).filter(([k, v]) => !["id", "名前", "種別", "装備可能クラス", "ステータス", "効果", "装備スキル"].includes(k) && has(v));
+  return `<h2>基本性能</h2><table class="weapon"><tbody><tr>${stats.map(s => `<td>${esc(s)}</td>`).join("")}</tr>`
     + effects.map(s => `<tr><td colspan="${stats.length}">${s ? esc(s) : "&nbsp;"}</td></tr>`).join("")
     + `</tbody></table>`
     + (has(x.装備スキル) ? `<h2>装備スキル</h2>${skillTable(x.装備スキル, sk)}` : "")
+    + `<h2>装備可能クラス</h2>${classTable(x, classes)}`
     + rest.map(([k, v]) => `<h2>${esc(k)}</h2>` + (k === "入手方法" ? howTable(v)
         : `<p>${esc(Array.isArray(v) ? v.join("、") : v)}</p>`)).join("");
 };
@@ -91,12 +98,12 @@ const howTable = v => String(v).split("／").map(t => {
   back.href = `items.html?k=${k}`;
   back.textContent = `← おすすめ${KINDS[k]}`;
   const get = f => fetch(`data/${f}.json`).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
-  return Promise.all([get(k), k === "weapons" ? get("skills") : []]);
-}).then(([list, skills]) => {
+  return Promise.all([get(k), k === "weapons" ? get("skills") : [], k === "weapons" ? get("classes") : []]);
+}).then(([list, skills, classes]) => {
   const x = list.find(x => x.id === id);
   if (!x) throw new Error(`id=${id || ""} の${KINDS[k]}は data/${k}.json にありません`);
   document.title = document.getElementById("title").textContent = x.名前;
-  if (k === "weapons") { document.getElementById("item").innerHTML = weaponHtml(x, Object.fromEntries(skills.map(s => [s.名前, s]))); return; }
+  if (k === "weapons") { document.getElementById("item").innerHTML = weaponHtml(x, Object.fromEntries(skills.map(s => [s.名前, s])), classes); return; }
   const rows = Object.entries(x).filter(([k]) => k !== "id" && k !== "名前")
     .map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(Array.isArray(v) ? v.join("、") : v)}</td></tr>`).join("");
   document.getElementById("item").innerHTML = `<table><tbody>${rows}</tbody></table>`;
