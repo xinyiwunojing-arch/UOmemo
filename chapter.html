@@ -97,7 +97,7 @@ document.addEventListener("change", e => {
   try { localStorage.setItem(CHECKS, JSON.stringify(checks)); } catch (err) {}
 });
 
-const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+const load = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
 load(ch).then(d => {
   document.title = `${d.title} | 攻略メモ`;
