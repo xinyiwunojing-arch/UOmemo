@@ -103,7 +103,7 @@ function render(v) {
       return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
-const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+const load = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
 // 項目｜内容 の2列の表（クラスの基本情報用）
 const kv = rows => `<div class="wrap"><table class="kv"><tbody>${rows.map(([k, v]) =>
