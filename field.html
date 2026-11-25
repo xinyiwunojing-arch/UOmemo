@@ -62,10 +62,14 @@ td.chk input { width:1.2rem; height:1.2rem; margin:0; }
 const k = new URLSearchParams(location.search).get("k") || "tablets";
 
 // 種類ごとの設定。total を付けた種類は、報酬がクエスト全体の報酬なので、表の列にせずエリアの表の上に書く
+// area を付けた種類は、id からエリアが分からないので、id ごとのエリアをここに書く
+// shop を付けた種類（闇商人）は、場所を表の上に書き、表には商品を並べる（チェック欄なし）
 const KINDS = {
   tablets: { title: "石板", notes: ["※ヤーナの加入が必要"], total: true },
   maps: { title: "宝の地図", notes: [] },
   graves: { title: "墓所", notes: ["※シャロンの加入が必要"], total: true },
+  blackmarket: { title: "闇商人", notes: ["※フィールドクエスト「闇商人」をクリアして「漆黒の交易許可証」を入手すると利用可能。取引は夜のみ"],
+                 area: { bk1: "c", bk2: "d", bk3: "e", bk4: "b", bk5: "a" }, shop: true },
 };
 const AREAS = [["c", "コルニア"], ["d", "ドラケンガルド"], ["e", "エルヘイム"], ["b", "バストリアス"], ["a", "アルビオン"]];
 
@@ -111,8 +115,10 @@ if (!kind) {
   document.getElementById("notes").innerHTML = kind.notes.map(n => `<p>${esc(n)}</p>`).join("");
   // チェックは「tablets:tc1」の形で保存する（エリアページと同じ。付けたチェックはそのまま引き継がれる）
   document.getElementById("list").innerHTML = AREAS.map(([a, name]) => {
-    const rows = list.filter(x => x.id[1] === a);
+    const rows = list.filter(x => (kind.area ? kind.area[x.id] : x.id[1]) === a);
     if (!rows.length) return "";
+    if (kind.shop) return `<h2>${esc(name)}</h2>` + rows.map(b => `<p>場所：${esc(b.場所 || "")}</p>`
+      + render(b.商品 || []).replace("<table>", '<table class="plain">')).join("");
     if (!kind.total) return `<h2>${esc(name)}</h2>` + render(rows, k);
     const all = rows.flatMap(r => r.報酬 || []);
     return `<h2>${esc(name)}</h2>` + (all.length ? `<p>クリア報酬：${esc(all.join("、"))}</p>` : "")
