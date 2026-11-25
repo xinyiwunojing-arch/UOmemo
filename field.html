@@ -61,10 +61,11 @@ td.chk input { width:1.2rem; height:1.2rem; margin:0; }
 // エリアごとに見出しを立てて並べる（エリアは id の2文字目で判定。例：tc1 → コルニア）
 const k = new URLSearchParams(location.search).get("k") || "tablets";
 
-// 種類ごとの設定。報酬はクエスト全体の報酬なので、表の列にせずエリアの表の上に書く
+// 種類ごとの設定。total を付けた種類は、報酬がクエスト全体の報酬なので、表の列にせずエリアの表の上に書く
 const KINDS = {
-  tablets: { title: "石板", notes: ["※ヤーナの加入が必要"] },
-  graves: { title: "墓所", notes: ["※シャロンの加入が必要"] },
+  tablets: { title: "石板", notes: ["※ヤーナの加入が必要"], total: true },
+  maps: { title: "宝の地図", notes: [] },
+  graves: { title: "墓所", notes: ["※シャロンの加入が必要"], total: true },
 };
 const AREAS = [["c", "コルニア"], ["d", "ドラケンガルド"], ["e", "エルヘイム"], ["b", "バストリアス"], ["a", "アルビオン"]];
 
@@ -112,6 +113,7 @@ if (!kind) {
   document.getElementById("list").innerHTML = AREAS.map(([a, name]) => {
     const rows = list.filter(x => x.id[1] === a);
     if (!rows.length) return "";
+    if (!kind.total) return `<h2>${esc(name)}</h2>` + render(rows, k);
     const all = rows.flatMap(r => r.報酬 || []);
     return `<h2>${esc(name)}</h2>` + (all.length ? `<p>クリア報酬：${esc(all.join("、"))}</p>` : "")
       + render(rows.map(({ 報酬, ...r }) => r), k);
