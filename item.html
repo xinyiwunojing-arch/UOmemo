@@ -71,7 +71,7 @@ const classTable = (x, classes) => { const list = classes.filter(c => x.装備�
     + list.map(c => `<tr><td><a href="class.html?id=${encodeURIComponent(c.id)}">${esc(c.クラス)}</a></td></tr>`).join("")
     + `</tbody></table></div>` : '<p class="empty">（なし）</p>'; };
 const equipHtml = (x, sk, classes, lv) => {
-  const stats = String(x.ステータス || "").split("、").map(s => s.replace(/(\d+)$/, " $1"));
+  const stats = String(x.ステータス || "").split("、").map(s => s.replace(/(\d+%?)$/, " $1"));
   const effects = [x.装備スキル, ...String(x.効果 || "").split("、")].filter(has);
   const rest = Object.entries(x).filter(([k, v]) => !["id", "名前", "種別", "装備可能クラス", "ステータス", "効果", "装備スキル"].includes(k) && has(v));
   return `<h2>基本性能</h2><table class="weapon"><tbody><tr>${stats.map(s => `<td>${esc(s)}</td>`).join("")}</tr>`
