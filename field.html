@@ -64,6 +64,7 @@ const k = new URLSearchParams(location.search).get("k") || "tablets";
 // 種類ごとの設定。total を付けた種類は、報酬がクエスト全体の報酬なので、表の列にせずエリアの表の上に書く
 // area を付けた種類は、id からエリアが分からないので、id ごとのエリアをここに書く
 // shop を付けた種類（闇商人）は、場所を表の上に書き、表には商品を並べる（チェック欄なし）
+// group を付けた種類は、エリアではなくその項目の値ごとに見出しを立てる（表は闇商人と同じくチェック欄なし）
 const KINDS = {
   tablets: { title: "石板", notes: ["※ヤーナの加入が必要"], total: true },
   maps: { title: "宝の地図", notes: [] },
@@ -76,6 +77,10 @@ const KINDS = {
   stones: { title: "環状列石", notes: ["※イシリオンの加入が必要（調べると隕鉄石を入手）"] },
   fielditems: { title: "フィールドアイテム", notes: [] },
   fieldquests: { title: "フィールドクエスト", notes: [] },
+  skyshards: { title: "天のかけら交換所", group: "解放", notes: [
+    "※サブクエスト「天翼騎士」のクリア後に発生するフィールドクエスト「天使の願い」で利用可能",
+    "※天のかけらを累計で何個交換したかに応じて品物が増え、累計100個で全品解放",
+    "※累計30個渡すと「天使の願い」が完了してオクリースが加入。加入後も代わりの天使と交換できる"] },
 };
 const AREAS = [["c", "コルニア"], ["d", "ドラケンガルド"], ["e", "エルヘイム"], ["b", "バストリアス"], ["a", "アルビオン"]];
 
@@ -120,6 +125,12 @@ if (!kind) {
   document.getElementById("title").textContent = kind.title;
   document.getElementById("notes").innerHTML = kind.notes.map(n => `<p>${esc(n)}</p>`).join("");
   // チェックは「tablets:tc1」の形で保存する
+  if (kind.group) {
+    const heads = [...new Set(list.map(x => x[kind.group]))];
+    document.getElementById("list").innerHTML = heads.map(h => `<h2>${esc(h)}</h2>`
+      + render(list.filter(x => x[kind.group] === h).map(({ [kind.group]: _, ...r }) => r)).replace("<table>", '<table class="plain">')).join("");
+    return;
+  }
   document.getElementById("list").innerHTML = AREAS.map(([a, name]) => {
     const rows = list.filter(x => (kind.area ? kind.area[x.id] : x.id[1]) === a);
     if (!rows.length) return "";
