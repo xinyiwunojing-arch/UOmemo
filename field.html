@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>攻略メモ</title>
+<style>
+:root { --bg:#fff; --fg:#222; --sub:#666; --line:#ddd; --head:#f3f3f3; --link:#0b63c4; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#161616; --fg:#e8e8e8; --sub:#aaa; --line:#3a3a3a; --head:#242424; --link:#6fb0ff; }
+}
+body { margin:0; padding:16px; background:var(--bg); color:var(--fg);
+       font-family:system-ui, sans-serif; line-height:1.6; }
+main { max-width:960px; margin:0 auto; }
+a { color:var(--link); }
+h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
+h2 { font-size:1.15rem; border-bottom:2px solid var(--line); padding-bottom:.2rem; margin-top:2rem; }
+.wrap { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:.95rem; }
+th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
+th { background:var(--head); white-space:nowrap; }
+.empty, .err { color:var(--sub); }
+/* チェック欄（各行の先頭） */
+th.chk, td.chk { width:1.5rem; text-align:center; }
+td.chk input { width:1.2rem; height:1.2rem; margin:0; }
+/* スマホ幅では表を1件ずつのカード表示にする（項目名は各値の前に出す） */
+@media (max-width: 600px) {
+  table, tbody, tr, td { display:block; width:auto; }
+  thead { display:none; }
+  tr { border:1px solid var(--line); border-radius:6px; padding:.4rem .6rem; margin-bottom:.6rem; }
+  td { display:inline-block; border:none; padding:.1rem 1rem .1rem 0; }
+  td::before { content:attr(data-label) "："; color:var(--sub); font-size:.85rem; }
+  td.name { display:block; font-weight:bold; }
+  td.name::before { content:none; }
+  td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
+  td.blank { display:none; }
+  /* チェック欄はカードの右上に置く */
+  tr { position:relative; padding-right:2.2rem; }  /* 右側をチェック欄のためにあけておく */
+  td.chk { position:absolute; top:.4rem; right:.6rem; padding:0; }
+  td.chk::before { content:none; }
+  /* 闇商人の商品はスマホでも表のまま */
+  table.plain { display:table; }
+  table.plain thead { display:table-header-group; }
+  table.plain tbody { display:table-row-group; }
+  table.plain tr { display:table-row; border:none; padding:0; margin:0; }
+  table.plain th, table.plain td { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; font-weight:normal; }
+  table.plain th { font-weight:bold; }
+  table.plain td::before { content:none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <nav><a href="index.html">← 目次</a></nav>
+  <h1 id="title">読み込み中…</h1>
+  <div id="notes"></div>
+  <div id="list"></div>
+</main>
+<script>
+// 使い方: field.html?k=tablets → data/tablets.json を全エリア分まとめて表示する
+// エリアごとに見出しを立てて並べる（エリアは id の2文字目で判定。例：tc1 → コルニア）
+const k = new URLSearchParams(location.search).get("k") || "tablets";
+
+// 種類ごとの設定。報酬はクエスト全体の報酬なので、表の列にせずエリアの表の上に書く
+const KINDS = {
+  tablets: { title: "石板", notes: ["※ヤーナの加入が必要"] },
+};
+const AREAS = [["c", "コルニア"], ["d", "ドラケンガルド"], ["e", "エルヘイム"], ["b", "バストリアス"], ["a", "アルビオン"]];
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
+//   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
+// chk を渡すと、表の各行の先頭にチェック欄を付ける（「chk:行の id」で保存）
+function render(v, chk) {
+  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
+  if (typeof v !== "object") return `<p>${esc(v)}</p>`;
+  if (!Array.isArray(v)) v = [v];
+  if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  const keys = [...new Set(v.flatMap(Object.keys))].filter(k => k !== "id");  // id は表示しない
+  const cell = x => x == null ? "" : esc(Array.isArray(x) ? x.join("、") : x);
+  const box = r => { const key = `${chk}:${r.id}`;
+    return `<td class="chk"><input type="checkbox" data-check="${esc(key)}"${checks[key] ? " checked" : ""} aria-label="チェック"></td>`; };
+  return `<div class="wrap"><table><thead><tr>${chk ? '<th class="chk">✓</th>' : ""}${keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead>
+    <tbody>${v.map(r => `<tr>${chk ? box(r) : ""}${keys.map(k => { const c = cell(r[k]);
+      const cls = c === "" ? "blank" : (k === "名前" || k === "クラス") ? "name" : "";  // 名前・クラスはスマホでカードの見出しになる
+      return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+// チェックはこのブラウザだけに保存する（localStorage の uomemo-checks に { "fielditems:fc1": true, … } の形で入れる）
+// 保存できない環境でも表示はそのまま動くようにする
+const CHECKS = "uomemo-checks";
+const checks = (() => { try { return JSON.parse(localStorage.getItem(CHECKS)) || {}; } catch (e) { return {}; } })();
+document.addEventListener("change", e => {
+  const key = e.target.dataset && e.target.dataset.check;
+  if (!key) return;
+  if (e.target.checked) checks[key] = true; else delete checks[key];
+  try { localStorage.setItem(CHECKS, JSON.stringify(checks)); } catch (err) {}
+});
+
+const load = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+
+const kind = KINDS[k];
+if (!kind) {
+  document.getElementById("title").textContent = "読み込みエラー";
+  document.getElementById("list").innerHTML = `<p class="err">${esc(k)} は未対応です</p>`;
+} else load(k).then(list => {
+  document.title = `${kind.title} | 攻略メモ`;
+  document.getElementById("title").textContent = kind.title;
+  document.getElementById("notes").innerHTML = kind.notes.map(n => `<p>${esc(n)}</p>`).join("");
+  // チェックは「tablets:tc1」の形で保存する（エリアページと同じ。付けたチェックはそのまま引き継がれる）
+  document.getElementById("list").innerHTML = AREAS.map(([a, name]) => {
+    const rows = list.filter(x => x.id[1] === a);
+    if (!rows.length) return "";
+    const all = rows.flatMap(r => r.報酬 || []);
+    return `<h2>${esc(name)}</h2>` + (all.length ? `<p>クリア報酬：${esc(all.join("、"))}</p>` : "")
+      + render(rows.map(({ 報酬, ...r }) => r), k);
+  }).join("");
+}).catch(e => {
+  document.getElementById("title").textContent = "読み込みエラー";
+  document.getElementById("list").innerHTML = `<p class="err">${esc(e.message)}</p>`;
+});
+</script>
+</body>
+</html>
