@@ -119,7 +119,7 @@ if (!kind) {
   document.title = `${kind.title} | 攻略メモ`;
   document.getElementById("title").textContent = kind.title;
   document.getElementById("notes").innerHTML = kind.notes.map(n => `<p>${esc(n)}</p>`).join("");
-  // チェックは「tablets:tc1」の形で保存する（エリアページと同じ。付けたチェックはそのまま引き継がれる）
+  // チェックは「tablets:tc1」の形で保存する
   document.getElementById("list").innerHTML = AREAS.map(([a, name]) => {
     const rows = list.filter(x => (kind.area ? kind.area[x.id] : x.id[1]) === a);
     if (!rows.length) return "";
