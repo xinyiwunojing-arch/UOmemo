@@ -21,10 +21,10 @@ table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; }
 .empty, .err { color:var(--sub); }
-/* チェック欄（各行の先頭） */
+/* チェック欄(各行の先頭) */
 th.chk, td.chk { width:1.5rem; text-align:center; }
 td.chk input { width:1.2rem; height:1.2rem; margin:0; }
-/* スマホ幅ではステージごとに並べ替えた小さな表にする：1段目 名前、その下にエリア・報酬、解放要素を縦に並べる（空なら出さない） */
+/* スマホ幅ではステージごとに並べ替えた小さな表にする：1段目 名前、その下にエリア・報酬、解放要素を縦に並べる(空なら出さない) */
 @media (max-width: 600px) {
   table, tbody { display:block; }
   thead { display:none; }
@@ -35,7 +35,7 @@ td.chk input { width:1.2rem; height:1.2rem; margin:0; }
   td.name { font-weight:bold; grid-column:1 / -1; }
 
   td.name::before, td[data-label="エリア"]::before { content:none; }
-  /* エリアは名前の下に小さく左寄せ（名前と同じ見出しの段に見えるように） */
+  /* エリアは名前の下に小さく左寄せ(名前と同じ見出しの段に見えるように) */
   td[data-label="エリア"] { background:var(--head); font-size:.8rem; padding-top:0; color:var(--sub); }
   td.name { border-bottom:none; }
   td[data-label="エリア"], td[data-label="解放要素"], td[data-label="報酬"] { grid-column:1 / -1; }
@@ -59,14 +59,14 @@ td.chk input { width:1.2rem; height:1.2rem; margin:0; }
 </main>
 <script>
 // data/route.json の stages に並べた順で、全エリアのステージを表示する
-// sections のボス戦で区切ってページを分ける（strategy.html?p=1〜）。p がなければ1ページ目を出す
+// sections のボス戦で区切ってページを分ける(strategy.html?p=1〜)。p がなければ1ページ目を出す
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-// 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
+// 値の形に合わせて表示する(項目名は書きながら決めるため、決め打ちしない)
 //   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
-// chk を渡すと、表の各行の先頭にチェック欄を付ける（「chk:行の id」で保存）
+// chk を渡すと、表の各行の先頭にチェック欄を付ける(「chk:行の id」で保存)
 function render(v, chk) {
-  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
+  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">(未記入)</p>';
   if (typeof v !== "object") return `<p>${esc(v)}</p>`;
   if (!Array.isArray(v)) v = [v];
   if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
@@ -80,7 +80,7 @@ function render(v, chk) {
       return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
-// チェックはこのブラウザだけに保存する（localStorage の uomemo-checks に { "stages:c01": true, … } の形で入れる。field.html と同じ場所）
+// チェックはこのブラウザだけに保存する(localStorage の uomemo-checks に { "stages:c01": true, … } の形で入れる。field.html と同じ場所)
 // 保存できない環境でも表示はそのまま動くようにする
 const CHECKS = "uomemo-checks";
 const checks = (() => { try { return JSON.parse(localStorage.getItem(CHECKS)) || {}; } catch (e) { return {}; } })();
@@ -107,7 +107,7 @@ Promise.all([load("route"), load("stages")]).then(([route, stages]) => {
     return { id: s.id, 名前: s.敵Lv != null ? `${s.名前}(Lv.${s.敵Lv})` : s.名前, エリア: AREA[s.id[0]] || "", 解放要素: parts.join("\n"),
              報酬: s.報酬 || "" };
   };
-  // ボス戦の後ろで区切る。最後のボス（一角獣の覇王）のページはその後のステージまで含める
+  // ボス戦の後ろで区切る。最後のボス(一角獣の覇王)のページはその後のステージまで含める
   const secs = route.sections || [];
   const groups = [[]];
   route.stages.forEach(id => { groups[groups.length - 1].push(id); if (secs.slice(0, -1).includes(id)) groups.push([]); });
