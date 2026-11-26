@@ -80,7 +80,7 @@ function render(v, chk) {
       return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
-// チェックはこのブラウザだけに保存する（localStorage の uomemo-checks に { "stages:c01": true, … } の形で入れる。chapter.html と同じ場所）
+// チェックはこのブラウザだけに保存する（localStorage の uomemo-checks に { "stages:c01": true, … } の形で入れる。field.html と同じ場所）
 // 保存できない環境でも表示はそのまま動くようにする
 const CHECKS = "uomemo-checks";
 const checks = (() => { try { return JSON.parse(localStorage.getItem(CHECKS)) || {}; } catch (e) { return {}; } })();
@@ -91,7 +91,7 @@ document.addEventListener("change", e => {
   try { localStorage.setItem(CHECKS, JSON.stringify(checks)); } catch (err) {}
 });
 
-const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+const load = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
 // id の頭文字からエリア名を出す
 const AREA = { c: "コルニア", d: "ドラケンガルド", e: "エルヘイム", b: "バストリアス", a: "アルビオン" };

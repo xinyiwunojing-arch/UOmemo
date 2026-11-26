@@ -53,21 +53,38 @@ td.chk input { width:1.2rem; height:1.2rem; margin:0; }
 <main>
   <nav><a href="index.html">← 目次</a></nav>
   <h1 id="title">読み込み中…</h1>
-  <section id="fielditems-sec" hidden><h2>フィールドアイテム</h2><div id="fielditems"></div></section>
-  <section id="blackmarket-sec" hidden><h2>闇商人</h2><div id="blackmarket"></div></section>
-  <section id="fieldquests-sec" hidden><h2>フィールドクエスト</h2><div id="fieldquests"></div></section>
-  <section id="maps-sec" hidden><h2>宝の地図</h2><div id="maps"></div></section>
-  <section id="tablets-sec" hidden><h2>石板</h2><div id="tablets"></div></section>
-  <section id="graves-sec" hidden><h2>墓所</h2><div id="graves"></div></section>
-  <section id="stones-sec" hidden><h2>環状列石</h2><div id="stones"></div></section>
-  <section id="windgates-sec" hidden><h2>風門</h2><div id="windgates"></div></section>
+  <div id="notes"></div>
+  <div id="list"></div>
 </main>
 <script>
-// 使い方: chapter.html?ch=01 → data/01.json を表示する
-const ch = new URLSearchParams(location.search).get("ch") || "01";
+// 使い方: field.html?k=tablets → data/tablets.json を全エリア分まとめて表示する
+// エリアごとに見出しを立てて並べる（エリアは id の2文字目で判定。例：tc1 → コルニア）
+const k = new URLSearchParams(location.search).get("k") || "tablets";
+
+// 種類ごとの設定。total を付けた種類は、報酬がクエスト全体の報酬なので、表の列にせずエリアの表の上に書く
+// area を付けた種類は、id からエリアが分からないので、id ごとのエリアをここに書く
+// shop を付けた種類（闇商人）は、場所を表の上に書き、表には商品を並べる（チェック欄なし）
+// group を付けた種類は、エリアではなくその項目の値ごとに見出しを立てる（表は闇商人と同じくチェック欄なし）
+const KINDS = {
+  tablets: { title: "石板", notes: ["※ヤーナの加入が必要"], total: true },
+  maps: { title: "宝の地図", notes: [] },
+  graves: { title: "墓所", notes: ["※シャロンの加入が必要"], total: true },
+  blackmarket: { title: "闇商人", notes: ["※フィールドクエスト「闇商人」をクリアして「漆黒の交易許可証」を入手すると利用可能。取引は夜のみ"],
+                 area: { bk1: "c", bk2: "d", bk3: "e", bk4: "b", bk5: "a" }, shop: true },
+  windgates: { title: "風門", notes: ["※フィールドクエスト「風神の武具」の発生後に調べると、番人（Lv35・5人）との戦闘。敵を全滅させると武具を入手",
+                                      "※「風神の武具」は「獅子王の遺産」クリア後、港町プリガシャーリの西の駐屯地で町人と話すと発生",
+                                      "クエスト報酬：初級指南書、勲章×5、軍資金2000G"] },
+  stones: { title: "環状列石", notes: ["※イシリオンの加入が必要（調べると隕鉄石を入手）"] },
+  fielditems: { title: "フィールドアイテム", notes: [] },
+  fieldquests: { title: "フィールドクエスト", notes: [] },
+  skyshards: { title: "天のかけら交換所", group: "解放", notes: [
+    "※サブクエスト「天翼騎士」のクリア後に発生するフィールドクエスト「天使の願い」で利用可能",
+    "※天のかけらを累計で何個交換したかに応じて品物が増え、累計100個で全品解放",
+    "※累計30個渡すと「天使の願い」が完了してオクリースが加入。加入後も代わりの天使と交換できる"] },
+};
+const AREAS = [["c", "コルニア"], ["d", "ドラケンガルド"], ["e", "エルヘイム"], ["b", "バストリアス"], ["a", "アルビオン"]];
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-
 // 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
 //   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
 // chk を渡すと、表の各行の先頭にチェック欄を付ける（「chk:行の id」で保存）
@@ -97,44 +114,36 @@ document.addEventListener("change", e => {
   try { localStorage.setItem(CHECKS, JSON.stringify(checks)); } catch (err) {}
 });
 
-const load = f => fetch(`data/${f}.json`).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
+const load = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
-load(ch).then(d => {
-  document.title = `${d.title} | 攻略メモ`;
-  document.getElementById("title").textContent = d.title;
-  // 宝の地図(maps.json)・石板(tablets.json)・墓所(graves.json)・フィールドアイテム(fielditems.json)・闇商人(blackmarket.json)・フィールドクエスト(fieldquests.json)・環状列石(stones.json)・風門(windgates.json)を、章データに並べた id で引いて表示する
-  // 指定がない種類は見出しごと出さない
-  const sub = (key, file) => (d[key] && d[key].length) ? load(file).then(list => {
-    const byKey = Object.fromEntries(list.map(x => [x.id, x]));
-    let rows = d[key].map(id => byKey[id] || { id, 状態: `${file}.json に未登録` });
-    // 闇商人は場所と注記を表の上に書き、表には商品を並べる
-    if (key === "blackmarket") {
-      const b = rows[0];
-      document.getElementById(key).innerHTML = `<p>場所：${esc(b.場所 || "")}</p>`
-        + `<p>※フィールドクエスト「闇商人」をクリアして「漆黒の交易許可証」を入手すると利用可能。取引は夜のみ</p>` + render(b.商品 || []).replace("<table>", '<table class="plain">');
-      document.getElementById(`${key}-sec`).hidden = false;
-      return;
-    }
-    // 石板・墓所の報酬はクエスト全体の報酬なので、表の列にせず表の上に独立して書く
-    let after = "";
-    const notes = { tablets: "※ヤーナの加入が必要", graves: "※シャロンの加入が必要",
-                    stones: "※イシリオンの加入が必要（調べると隕鉄石を入手）",
-                    windgates: ["※フィールドクエスト「風神の武具」の発生後に調べると、番人（Lv35・5人）との戦闘。敵を全滅させると武具を入手",
-                                "※「風神の武具」は「獅子王の遺産」クリア後、港町プリガシャーリの西の駐屯地で町人と話すと発生",
-                                "クエスト報酬：初級指南書、勲章×5、軍資金2000G"] };  // 複数行は配列で書く
-    if (key in notes) {
-      const all = rows.flatMap(r => r.報酬 || []);
-      rows = rows.map(({ 報酬, ...r }) => r);
-      if (all.length) after += `<p>クリア報酬：${esc(all.join("、"))}</p>`;
-      after += [].concat(notes[key]).map(n => `<p>${esc(n)}</p>`).join("");
-    }
-    document.getElementById(key).innerHTML = after + render(rows, file);
-    document.getElementById(`${key}-sec`).hidden = false;
-  }) : null;
-  return Promise.all([sub("maps", "maps"), sub("tablets", "tablets"), sub("graves", "graves"), sub("fielditems", "fielditems"), sub("blackmarket", "blackmarket"), sub("fieldquests", "fieldquests"), sub("stones", "stones"), sub("windgates", "windgates")]);
+const kind = KINDS[k];
+if (!kind) {
+  document.getElementById("title").textContent = "読み込みエラー";
+  document.getElementById("list").innerHTML = `<p class="err">${esc(k)} は未対応です</p>`;
+} else load(k).then(list => {
+  document.title = `${kind.title} | 攻略メモ`;
+  document.getElementById("title").textContent = kind.title;
+  document.getElementById("notes").innerHTML = kind.notes.map(n => `<p>${esc(n)}</p>`).join("");
+  // チェックは「tablets:tc1」の形で保存する
+  if (kind.group) {
+    const heads = [...new Set(list.map(x => x[kind.group]))];
+    document.getElementById("list").innerHTML = heads.map(h => `<h2>${esc(h)}</h2>`
+      + render(list.filter(x => x[kind.group] === h).map(({ [kind.group]: _, ...r }) => r)).replace("<table>", '<table class="plain">')).join("");
+    return;
+  }
+  document.getElementById("list").innerHTML = AREAS.map(([a, name]) => {
+    const rows = list.filter(x => (kind.area ? kind.area[x.id] : x.id[1]) === a);
+    if (!rows.length) return "";
+    if (kind.shop) return `<h2>${esc(name)}</h2>` + rows.map(b => `<p>場所：${esc(b.場所 || "")}</p>`
+      + render(b.商品 || []).replace("<table>", '<table class="plain">')).join("");
+    if (!kind.total) return `<h2>${esc(name)}</h2>` + render(rows, k);
+    const all = rows.flatMap(r => r.報酬 || []);
+    return `<h2>${esc(name)}</h2>` + (all.length ? `<p>クリア報酬：${esc(all.join("、"))}</p>` : "")
+      + render(rows.map(({ 報酬, ...r }) => r), k);
+  }).join("");
 }).catch(e => {
   document.getElementById("title").textContent = "読み込みエラー";
-  document.querySelector("main").insertAdjacentHTML("beforeend", `<p class="err">${esc(e.message)}</p>`);
+  document.getElementById("list").innerHTML = `<p class="err">${esc(e.message)}</p>`;
 });
 </script>
 </body>
