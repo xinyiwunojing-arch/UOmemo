@@ -216,14 +216,14 @@ h2 { font-size:1.1rem; margin:1.5rem 0 .5rem; }
       <li><a href="item.html?k=shields&amp;id=s22">風大盾スキーローン</a></li>
     </ul>
   </section>
-  <section data-k="items" hidden><p class="empty">（未記入）</p></section>
+  <section data-k="items" hidden><p class="empty">(未記入)</p></section>
   <p class="err" id="err" hidden></p>
 </main>
 <script>
-// おすすめの武器・盾・アクセサリ・アイテムの一覧（items.html?k=weapons など）
-//   k = weapons（武器）・shields（盾）・accessories（アクセサリ）・items（アイテム）
-// 見出し（分類）とリンクは上の HTML に直接書く。JSON にものを足したら、ここにもリンクを足す
-// 名前は個別ページ（item.html?k=weapons&id=w01 など）へのリンク。k に合う section だけを出す
+// おすすめの武器・盾・アクセサリ・アイテムの一覧(items.html?k=weapons など)
+//   k = weapons(武器)・shields(盾)・accessories(アクセサリ)・items(アイテム)
+// 見出し(分類)とリンクは上の HTML に直接書く。JSON にものを足したら、ここにもリンクを足す
+// 名前は個別ページ(item.html?k=weapons&id=w01 など)へのリンク。k に合う section だけを出す
 const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ", items: "アイテム" };
 const k = new URLSearchParams(location.search).get("k");
 if (Object.hasOwn(KINDS, k || "")) {
@@ -231,7 +231,7 @@ if (Object.hasOwn(KINDS, k || "")) {
   document.querySelector(`section[data-k="${k}"]`).hidden = false;
 } else {
   const err = document.getElementById("err");
-  err.textContent = `k=${k || ""} の種類はありません（weapons・shields・accessories・items のどれか）`;
+  err.textContent = `k=${k || ""} の種類はありません(weapons・shields・accessories・items のどれか)`;
   err.hidden = false;
 }
 </script>
