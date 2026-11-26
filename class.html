@@ -23,7 +23,7 @@ table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; }
 .empty, .err { color:var(--sub); }
-/* スマホ幅では表を1件ずつのカード表示にする（項目名は各値の前に出す） */
+/* スマホ幅では表を1件ずつのカード表示にする(項目名は各値の前に出す) */
 @media (max-width: 600px) {
   table, tbody, tr, td { display:block; width:auto; }
   thead { display:none; }
@@ -34,20 +34,20 @@ th { background:var(--head); white-space:nowrap; }
   td.name::before { content:none; }
   td[data-label="解放要素"]::before { content:none; }  /* 中身に「加入：」「施設：」が付くので見出しは出さない */
   td.blank { display:none; }
-  /* 基本情報（kv）はスマホでも表のまま */
+  /* 基本情報(kv)はスマホでも表のまま */
   table.kv { display:table; width:100%; }
   table.kv tbody { display:table-row-group; }
   table.kv tr { display:table-row; border:none; padding:0; margin:0; }
   table.kv th, table.kv td { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; }
   table.kv td::before { content:none; }
-  /* 雇用場所（hr）はスマホでもエリアごとに1つの表のまま（見出し行も出す） */
+  /* 雇用場所(hr)はスマホでもエリアごとに1つの表のまま(見出し行も出す) */
   table.hr { display:table; width:100%; }
   table.hr thead { display:table-header-group; }
   table.hr tbody { display:table-row-group; }
   table.hr tr { display:table-row; border:none; border-radius:0; padding:0; margin:0; }
   table.hr th, table.hr td, table.hr td.blank { display:table-cell; border:1px solid var(--line); padding:.35rem .5rem; }
   table.hr td::before { content:none; }
-  /* スキル（sk）はスキルごとに並べ替えた小さな表にする：1段目 名前と消費（右詰め）、2〜3段目 数値（3列）、最後 説明 */
+  /* スキル(sk)はスキルごとに並べ替えた小さな表にする：1段目 名前と消費(右詰め)、2〜3段目 数値(3列)、最後 説明 */
   table.sk tr { display:grid; grid-template-columns:repeat(3, 1fr); padding:0; border-radius:0; border:none; border-top:1px solid var(--line); border-left:1px solid var(--line); }
   table.sk td, table.sk td.blank { display:block; border:none; border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:.25rem .4rem; }
   table.sk td::before { content:attr(data-label); display:block; font-size:.75rem; }
@@ -79,19 +79,19 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
   <div id="classes">読み込み中…</div>
 </main>
 <script>
-// data/classes.json のクラスを1つ（class.html?id=k01 など）、「基本情報」「各スキル」の表と「評価」で表示する
-// 雇用場所は classes.json の「雇用場所」（エリア名 → [{拠点, レベル}, …]。性別が決まっている拠点は名前の後ろに(♂)(♀)(♂♀)）を評価の後に、エリアごとの小見出しと 拠点｜レベル の表にして出す（スマホでも表のまま）
-// CC できるクラス（名前が「ロード／ハイロード」の形）は「ロード」「ハイロード」ごとに分けて書き、ボタンで切り替える。雇用場所が書いてある方だけボタンを出す
-// どちらにも書いていなければ（雇用できないクラス）見出しごと出さない
+// data/classes.json のクラスを1つ(class.html?id=k01 など)、「基本情報」「各スキル」の表と「評価」で表示する
+// 雇用場所は classes.json の「雇用場所」(エリア名 → [{拠点, レベル}, …]。性別が決まっている拠点は名前の後ろに(♂)(♀)(♂♀))を評価の後に、エリアごとの小見出しと 拠点｜レベル の表にして出す(スマホでも表のまま)
+// CC できるクラス(名前が「ロード／ハイロード」の形)は「ロード」「ハイロード」ごとに分けて書き、ボタンで切り替える。雇用場所が書いてある方だけボタンを出す
+// どちらにも書いていなければ(雇用できないクラス)見出しごと出さない
 // スキルの説明は skills.json・braves.json・leaders.json から引く
-// 評価は「総合：S」のように見出しにしてその下にコメントを文章で出す。総合を先に、続けて攻略メモ（strategy.html?p=1〜）のページ名と同じ順に各段階を出す
-// 各段階は、クラスが解放される段階から出す（それより前の段階は出さない）。解放がその段階の最後のボス戦なら次の段階から
+// 評価は「総合：S」のように見出しにしてその下にコメントを文章で出す。総合を先に、続けて攻略メモ(strategy.html?p=1〜)のページ名と同じ順に各段階を出す
+// 各段階は、クラスが解放される段階から出す(それより前の段階は出さない)。解放がその段階の最後のボス戦なら次の段階から
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-// 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
+// 値の形に合わせて表示する(項目名は書きながら決めるため、決め打ちしない)
 //   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
 function render(v) {
-  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
+  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">(未記入)</p>';
   if (typeof v !== "object") return `<p>${esc(v)}</p>`;
   if (!Array.isArray(v)) v = [v];
   if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
@@ -105,19 +105,19 @@ function render(v) {
 
 const load = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
 
-// 項目｜内容 の2列の表（クラスの基本情報用）
+// 項目｜内容 の2列の表(クラスの基本情報用)
 const kv = rows => `<div class="wrap"><table class="kv"><tbody>${rows.map(([k, v]) =>
   `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join("")}</tbody></table></div>`;
 
-// 攻略メモのページ名（strategy.html と同じ作り方：sections のボス戦の名前＋「まで」）
+// 攻略メモのページ名(strategy.html と同じ作り方：sections のボス戦の名前＋「まで」)
 const strategyTitles = (route, stages) => {
   const byId = Object.fromEntries(stages.map(s => [s.id, s]));
   return (route.sections || []).map(id => `${byId[id] ? byId[id].名前 : id}まで`);
 };
 
-// クラスの「解放」（例：「決起の矢先(Lv.2)」）のステージが、攻略メモの何段階目（0始まり）から使えるか
+// クラスの「解放」(例：「決起の矢先(Lv.2)」)のステージが、攻略メモの何段階目(0始まり)から使えるか
 // stages.json で同じ名前のステージを探し、route.json の stages の並びで位置を出す。解放がボス戦ならその次の段階から
-// ステージが見つからなければ 0（全段階を出す）
+// ステージが見つからなければ 0(全段階を出す)
 const firstSection = (unlock, route, stages) => {
   const name = String(unlock || "").split("(")[0];
   const ids = stages.filter(s => s.名前 === name).map(s => s.id);
@@ -155,15 +155,15 @@ Promise.all([load("classes"), load("skills"), load("braves"), load("leaders"), l
     const active = withLv(c.アクティブスキル).map(([n, lv]) => skillRow(n, lv, "AP"));
     const passive = withLv(c.パッシブスキル).map(([n, lv]) => skillRow(n, lv, "PP"));
     const brave = braveList(c.ブレイブスキル).map(([n, note]) => ({ 名前: note ? `${n}(${note})` : n, 消費: `BP${(bv[n] || {}).消費 || ""}`, 説明: (bv[n] || {}).効果 || "" }));
-    const skt = rows => render(rows).replace("<table>", '<table class="sk">');  // スキルの表（スマホでも表のまま）
-    // 評価（S/A/B/C/D）。S〜D なら色を付ける
+    const skt = rows => render(rows).replace("<table>", '<table class="sk">');  // スキルの表(スマホでも表のまま)
+    // 評価(S/A/B/C/D)。S〜D なら色を付ける
     const ev = c.評価 || {};
     const rank = e => { const r = String((e || {}).評価 || ""); return `<span class="${/^[SABCD]$/.test(r) ? "r" + r : ""}">${esc(r)}</span>`; };
-    // 1段階ぶん：見出しを「名前：S」にし、その下にコメントを文章で出す（改行はそのまま出す。空欄なら（未記入））
+    // 1段階ぶん：見出しを「名前：S」にし、その下にコメントを文章で出す(改行はそのまま出す。空欄なら(未記入))
     const block = (name, e) => { e = e || {};
       return `<h3>${name}：${rank(e)}</h3>`
-        + (e.コメント ? `<p class="memo">${esc(e.コメント)}</p>` : '<p class="empty">（未記入）</p>'); };
-    // 総合 → 各段階（段階名は攻略メモの各ページへのリンク）。解放される段階より前は出さない
+        + (e.コメント ? `<p class="memo">${esc(e.コメント)}</p>` : '<p class="empty">(未記入)</p>'); };
+    // 総合 → 各段階(段階名は攻略メモの各ページへのリンク)。解放される段階より前は出さない
     const from = firstSection(c.解放, route, stages);
     const evals = `<h2>評価</h2>${block("総合", ev.総合)}`
       + titles.map((k, i) => i < from ? "" : block(`<a href="strategy.html?p=${i + 1}">${esc(k)}</a>`, ev[k])).join("");
