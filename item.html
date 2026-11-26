@@ -50,11 +50,11 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
   <div id="item">読み込み中…</div>
 </main>
 <script>
-// おすすめの武器・盾・アクセサリ・アイテムを1つ(item.html?k=weapons&id=w01 など)、「項目｜内容」の表で表示する
-//   k は種類(items.html と同じ：weapons・shields・accessories・items)、id は data/{k}.json の id
+// おすすめの武器・盾・アクセサリを1つ(item.html?k=weapons&id=w01 など)、「項目｜内容」の表で表示する
+//   k は種類(items.html と同じ：weapons・shields・accessories)、id は data/{k}.json の id
 // 項目は JSON に書いた順にそのまま出す(id と 名前 は表に出さない)
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ", items: "アイテム" };
+const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ" };
 const q = new URLSearchParams(location.search), k = q.get("k"), id = q.get("id");
 // 武器・盾・アクセサリはゲームの画面にあわせて、見出しなしの表でステータス(物理攻撃・魔法攻撃／物理防御・魔法防御)を1行に並べ、その下に装備時効果(装備スキルの名前・効果)を1行ずつ出す(ない分の行は出さない)
 // 装備スキルは表の下に、class.html と同じスキルの表(data/skills.json から引く)で出す。入手方法など、ほかの項目はその下に見出しを付けて出す
@@ -115,21 +115,17 @@ const howTable = (v, lv) => {
     }).join("")}</tbody></table>`).join("");
 };
 
-(Object.hasOwn(KINDS, k || "") ? Promise.resolve() : Promise.reject(new Error(`k=${k || ""} の種類はありません(weapons・shields・accessories・items のどれか)`))).then(() => {
+(Object.hasOwn(KINDS, k || "") ? Promise.resolve() : Promise.reject(new Error(`k=${k || ""} の種類はありません(weapons・shields・accessories のどれか)`))).then(() => {
   const back = document.getElementById("back");
   back.href = `items.html?k=${k}`;
   back.textContent = `← おすすめ${KINDS[k]}`;
   const get = f => fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => { if (r.status === 404) return []; if (!r.ok) throw new Error(`data/${f}.json が読めません`); return r.json(); });
-  const equip = k !== "items";
-  return Promise.all([get(k), equip ? get("skills") : [], equip ? get("classes") : [], equip ? get("stages") : []]);
+  return Promise.all([get(k), get("skills"), get("classes"), get("stages")]);
 }).then(([list, skills, classes, stages]) => {
   const x = list.find(x => x.id === id);
   if (!x) throw new Error(`id=${id || ""} の${KINDS[k]}は data/${k}.json にありません`);
   document.title = document.getElementById("title").textContent = x.名前;
-  if (k !== "items") { document.getElementById("item").innerHTML = equipHtml(x, Object.fromEntries(skills.map(s => [s.名前, s])), classes, Object.fromEntries(stages.map(s => [s.名前, s.敵Lv]))); return; }
-  const rows = Object.entries(x).filter(([k]) => k !== "id" && k !== "名前")
-    .map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(Array.isArray(v) ? v.join("、") : v)}</td></tr>`).join("");
-  document.getElementById("item").innerHTML = `<table><tbody>${rows}</tbody></table>`;
+  document.getElementById("item").innerHTML = equipHtml(x, Object.fromEntries(skills.map(s => [s.名前, s])), classes, Object.fromEntries(stages.map(s => [s.名前, s.敵Lv])));
 }).catch(e => {
   document.getElementById("item").innerHTML = `<p class="err">${esc(e.message)}</p>`;
 });
