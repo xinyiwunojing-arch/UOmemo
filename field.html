@@ -20,10 +20,10 @@ table { border-collapse:collapse; width:100%; font-size:.95rem; }
 th, td { border:1px solid var(--line); padding:.35rem .5rem; text-align:left; vertical-align:top; white-space:pre-line; }
 th { background:var(--head); white-space:nowrap; }
 .empty, .err { color:var(--sub); }
-/* チェック欄（各行の先頭） */
+/* チェック欄(各行の先頭) */
 th.chk, td.chk { width:1.5rem; text-align:center; }
 td.chk input { width:1.2rem; height:1.2rem; margin:0; }
-/* スマホ幅では表を1件ずつのカード表示にする（項目名は各値の前に出す） */
+/* スマホ幅では表を1件ずつのカード表示にする(項目名は各値の前に出す) */
 @media (max-width: 600px) {
   table, tbody, tr, td { display:block; width:auto; }
   thead { display:none; }
@@ -58,23 +58,23 @@ td.chk input { width:1.2rem; height:1.2rem; margin:0; }
 </main>
 <script>
 // 使い方: field.html?k=tablets → data/tablets.json を全エリア分まとめて表示する
-// エリアごとに見出しを立てて並べる（エリアは id の2文字目で判定。例：tc1 → コルニア）
+// エリアごとに見出しを立てて並べる(エリアは id の2文字目で判定。例：tc1 → コルニア)
 const k = new URLSearchParams(location.search).get("k") || "tablets";
 
 // 種類ごとの設定。total を付けた種類は、報酬がクエスト全体の報酬なので、表の列にせずエリアの表の上に書く
 // area を付けた種類は、id からエリアが分からないので、id ごとのエリアをここに書く
-// shop を付けた種類（闇商人）は、場所を表の上に書き、表には商品を並べる（チェック欄なし）
-// group を付けた種類は、エリアではなくその項目の値ごとに見出しを立てる（表は闇商人と同じくチェック欄なし）
+// shop を付けた種類(闇商人)は、場所を表の上に書き、表には商品を並べる(チェック欄なし)
+// group を付けた種類は、エリアではなくその項目の値ごとに見出しを立てる(表は闇商人と同じくチェック欄なし)
 const KINDS = {
   tablets: { title: "石板", notes: ["※ヤーナの加入が必要"], total: true },
   maps: { title: "宝の地図", notes: [] },
   graves: { title: "墓所", notes: ["※シャロンの加入が必要"], total: true },
   blackmarket: { title: "闇商人", notes: ["※フィールドクエスト「闇商人」をクリアして「漆黒の交易許可証」を入手すると利用可能。取引は夜のみ"],
                  area: { bk1: "c", bk2: "d", bk3: "e", bk4: "b", bk5: "a" }, shop: true },
-  windgates: { title: "風門", notes: ["※フィールドクエスト「風神の武具」の発生後に調べると、番人（Lv35・5人）との戦闘。敵を全滅させると武具を入手",
+  windgates: { title: "風門", notes: ["※フィールドクエスト「風神の武具」の発生後に調べると、番人(Lv.35・5人)との戦闘。敵を全滅させると武具を入手",
                                       "※「風神の武具」は「獅子王の遺産」クリア後、港町プリガシャーリの西の駐屯地で町人と話すと発生",
                                       "クエスト報酬：初級指南書、勲章×5、軍資金2000G"] },
-  stones: { title: "環状列石", notes: ["※イシリオンの加入が必要（調べると隕鉄石を入手）"] },
+  stones: { title: "環状列石", notes: ["※イシリオンの加入が必要(調べると隕鉄石を入手)"] },
   fielditems: { title: "フィールドアイテム", notes: [] },
   fieldquests: { title: "フィールドクエスト", notes: [] },
   skyshards: { title: "天のかけら交換所", group: "解放", notes: [
@@ -85,11 +85,11 @@ const KINDS = {
 const AREAS = [["c", "コルニア"], ["d", "ドラケンガルド"], ["e", "エルヘイム"], ["b", "バストリアス"], ["a", "アルビオン"]];
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-// 値の形に合わせて表示する（項目名は書きながら決めるため、決め打ちしない）
+// 値の形に合わせて表示する(項目名は書きながら決めるため、決め打ちしない)
 //   文字列 → 段落 / 文字列の配列 → 箇条書き / オブジェクトの配列 → 表
-// chk を渡すと、表の各行の先頭にチェック欄を付ける（「chk:行の id」で保存）
+// chk を渡すと、表の各行の先頭にチェック欄を付ける(「chk:行の id」で保存)
 function render(v, chk) {
-  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">（未記入）</p>';
+  if (v == null || (Array.isArray(v) && v.length === 0)) return '<p class="empty">(未記入)</p>';
   if (typeof v !== "object") return `<p>${esc(v)}</p>`;
   if (!Array.isArray(v)) v = [v];
   if (v.every(x => typeof x !== "object")) return `<ul>${v.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
@@ -103,7 +103,7 @@ function render(v, chk) {
       return `<td data-label="${esc(k)}"${cls ? ` class="${cls}"` : ""}>${c}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
-// チェックはこのブラウザだけに保存する（localStorage の uomemo-checks に { "fielditems:fc1": true, … } の形で入れる）
+// チェックはこのブラウザだけに保存する(localStorage の uomemo-checks に { "fielditems:fc1": true, … } の形で入れる)
 // 保存できない環境でも表示はそのまま動くようにする
 const CHECKS = "uomemo-checks";
 const checks = (() => { try { return JSON.parse(localStorage.getItem(CHECKS)) || {}; } catch (e) { return {}; } })();
