@@ -6,10 +6,10 @@
 <title>クラス</title>
 <style>
 :root { --bg:#fff; --fg:#222; --sub:#666; --line:#ddd; --head:#f3f3f3; --link:#0b63c4;
-        --rS:#b8860b; --rA:#c62828; --rB:#1565c0; --rC:#689f38; --rD:#757575; }
+        --rSS:#b8860b; --rS:#78909c; --rA:#c62828; --rB:#1565c0; --rC:#689f38; }
 @media (prefers-color-scheme: dark) {
   :root { --bg:#161616; --fg:#e8e8e8; --sub:#aaa; --line:#3a3a3a; --head:#242424; --link:#6fb0ff;
-          --rS:#ffb300; --rA:#ff6b6b; --rB:#64a8ff; --rC:#aed581; --rD:#9e9e9e; }
+          --rSS:#ffb300; --rS:#cfd8dc; --rA:#ff6b6b; --rB:#64a8ff; --rC:#aed581; }
 }
 body { margin:0; padding:16px; background:var(--bg); color:var(--fg);
        font-family:system-ui, sans-serif; line-height:1.6; }
@@ -64,7 +64,7 @@ th { background:var(--head); white-space:nowrap; }
 }
 table.kv th { width:7em; }
 p.memo { white-space:pre-line; }
-.rS { color:var(--rS); } .rA { color:var(--rA); } .rB { color:var(--rB); } .rC { color:var(--rC); } .rD { color:var(--rD); }
+.rSS { color:var(--rSS); } .rS { color:var(--rS); } .rA { color:var(--rA); } .rB { color:var(--rB); } .rC { color:var(--rC); }
 h3 { font-size:1rem; margin:1rem 0 .4rem; }
 /* 雇用場所の CC前／CC後 切り替えボタン */
 .tabs { display:flex; gap:.4rem; margin:.6rem 0; }
@@ -156,9 +156,9 @@ Promise.all([load("classes"), load("skills"), load("braves"), load("leaders"), l
     const passive = withLv(c.パッシブスキル).map(([n, lv]) => skillRow(n, lv, "PP"));
     const brave = braveList(c.ブレイブスキル).map(([n, note]) => ({ 名前: note ? `${n}(${note})` : n, 消費: `BP${(bv[n] || {}).消費 || ""}`, 説明: (bv[n] || {}).効果 || "" }));
     const skt = rows => render(rows).replace("<table>", '<table class="sk">');  // スキルの表(スマホでも表のまま)
-    // 評価(S/A/B/C/D)。S〜D なら色を付ける
+    // 評価(SS/S/A/B/C)。SS〜C なら色を付ける
     const ev = c.評価 || {};
-    const rank = e => { const r = String((e || {}).評価 || ""); return `<span class="${/^[SABCD]$/.test(r) ? "r" + r : ""}">${esc(r)}</span>`; };
+    const rank = e => { const r = String((e || {}).評価 || ""); return `<span class="${/^(SS|[SABC])$/.test(r) ? "r" + r : ""}">${esc(r)}</span>`; };
     // 1段階ぶん：見出しを「名前：S」にし、その下にコメントを文章で出す(改行はそのまま出す。空欄なら(未記入))
     const block = (name, e) => { e = e || {};
       return `<h3>${name}：${rank(e)}</h3>`
