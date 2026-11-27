@@ -54,7 +54,7 @@ h3 { font-size:1rem; margin:1rem 0 .4rem; }
 //   k は種類(items.html と同じ：weapons・shields・accessories)、id は data/{k}.json の id
 // 項目は JSON に書いた順にそのまま出す(id と 名前 は表に出さない)
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const KINDS = { weapons: "武器", shields: "盾", accessories: "アクセサリ" };
+const KINDS = { weapons: "武器", shields: "盾・大盾", accessories: "アクセサリ" };
 const q = new URLSearchParams(location.search), k = q.get("k"), id = q.get("id");
 // 武器・盾・アクセサリはゲームの画面にあわせて、見出しなしの表でステータス(物理攻撃・魔法攻撃／物理防御・魔法防御)を1行に並べ、その下に装備時効果(装備スキルの名前・効果)を1行ずつ出す(ない分の行は出さない)
 // 装備スキルは表の下に、class.html と同じスキルの表(data/skills.json から引く)で出す。入手方法など、ほかの項目はその下に見出しを付けて出す
